@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #02050a 0%, #05080f 100%);
+            color: #00f2ff;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+            background-size: 45px 45px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00f2ff, transparent);
+            box-shadow: 0 0 20px #00f2ff;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0a1628 0%, #02050a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.8s, visibility 0.8s;
+        }
+
+        #login-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .login-title {
+            font-size: 5rem;
+            letter-spacing: 30px;
+            text-shadow: 0 0 40px #00f2ff, 0 0 80px #00f2ff, 0 0 120px #00f2ff;
+            margin-bottom: 80px;
+            animation: pulse 2s ease-in-out infinite;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; text-shadow: 0 0 40px #00f2ff, 0 0 80px #00f2ff, 0 0 120px #00f2ff; }
+            50% { opacity: 0.85; text-shadow: 0 0 30px #00f2ff, 0 0 60px #00f2ff, 0 0 90px #00f2ff; }
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 50px 70px;
+            border: 3px solid #00f2ff;
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.6), inset 0 0 30px rgba(0, 242, 255, 0.1);
+            backdrop-filter: blur(20px);
+            position: relative;
+        }
+
+        .login-box::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #00f2ff, transparent, #00f2ff);
+            z-index: -1;
+            opacity: 0.3;
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .login-box input {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00f2ff;
+            color: #00f2ff;
+            padding: 18px 35px;
+            font-size: 1.3rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 5px;
+            width: 400px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.4), 0 0 20px rgba(0, 242, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.6), 0 0 30px rgba(0, 242, 255, 0.5);
+            border-color: #00f2ff;
+        }
+
+        .login-box button {
+            background: rgba(0, 242, 255, 0.1);
+            border: 2px solid #00f2ff;
+            color: #00f2ff;
+            padding: 15px 50px;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .login-box button:hover {
+            background: rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 35px rgba(0, 242, 255, 0.6);
+            transform: scale(1.03);
+        }
+
+        .login-error {
+            color: #ff0055;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        #main-interface {
+            display: none;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 1fr 220px;
+            gap: 15px;
+            padding: 15px;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        #main-interface.active {
+            display: grid;
+        }
+
+        .panel {
+            background: rgba(5, 15, 30, 0.85);
+            border: 1px solid #00f2ff;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: #00f2ff;
+            box-shadow: 0 0 10px #00f2ff;
+        }
+
+        #left-panel {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .status-header {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 242, 255, 0.1);
+            border-bottom: 2px solid #00f2ff;
+            margin: -20px -20px 20px -20px;
+        }
+
+        .status-header h1 {
+            font-size: 1.8rem;
+            letter-spacing: 8px;
+            text-shadow: 0 0 15px #00f2ff;
+        }
+
+        .status-header .status {
+            font-size: 0.8rem;
+            color: #0f0;
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+
+        .metric {
+            margin-bottom: 20px;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .metric-bar {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00f2ff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00f2ff 0%, #00a8cc 100%);
+            box-shadow: 0 0 15px #00f2ff;
+            transition: width 0.5s ease;
+        }
+
+        .service-btn {
+            background: transparent;
+            border: 2px solid #00f2ff;
+            color: #00f2ff;
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 0 0 10px #00f2ff;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .service-btn:hover {
+            background: rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.6);
+            transform: scale(1.02);
+        }
+
+        .calculator {
+            margin-top: 20px;
+        }
+
+        .calc-display {
+            background: #000;
+            border: 2px solid #00f2ff;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            text-align: right;
+            min-height: 50px;
+            box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .calc-btn {
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid #00f2ff;
+            color: #00f2ff;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calc-btn:hover {
+            background: rgba(0, 242, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .calc-btn.clear {
+            background: rgba(255, 0, 85, 0.1);
+            border-color: #ff0055;
+            color: #ff0055;
+        }
+
+        .calc-btn.clear:hover {
+            background: rgba(255, 0, 85, 0.3);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
+        }
+
+        #center-panel {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hud-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+        }
+
+        .hud-ring {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-outer {
+            width: 350px;
+            height: 350px;
+            border: 2px dashed #00f2ff;
+            animation: rotate 25s linear infinite;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+        }
+
+        .ring-middle {
+            width: 280px;
+            height: 280px;
+            border: 3px solid #00f2ff;
+            animation: rotate 10s linear infinite;
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.5);
+        }
+
+        .ring-inner {
+            width: 210px;
+            height: 210px;
+            border: 2px solid #00f2ff;
+            animation: rotate-reverse 30s linear infinite;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.6);
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes rotate-reverse {
+            from { transform: translate(-50%, -50%) rotate(360deg); }
+            to { transform: translate(-50%, -50%) rotate(0deg); }
+        }
+
+        .hud-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hud-center:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .hud-center:hover h2 {
+            text-shadow: 0 0 30px #00f2ff, 0 0 60px #00f2ff;
+        }
+
+        .hud-center h2 {
+            font-size: 2rem;
+            letter-spacing: 12px;
+            text-shadow: 0 0 25px #00f2ff, 0 0 50px #00f2ff;
+            margin-bottom: 15px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .hud-clock {
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 25px #00f2ff;
+            margin-bottom: 10px;
+        }
+
+        .hud-subtitle {
+            font-size: 1rem;
+            color: rgba(0, 242, 255, 0.7);
+            letter-spacing: 3px;
+        }
+
+        #right-panel {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .utility-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.3);
+        }
+
+        .utility-section:last-child {
+            border-bottom: none;
+        }
+
+        .utility-section h3 {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #00f2ff;
+        }
+
+        .sandbox-editor {
+            background: #000;
+            border: 2px solid #00f2ff;
+            color: #00f2ff;
+            padding: 15px;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 150px;
+            box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .sandbox-editor:focus {
+            outline: none;
+            box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.4);
+        }
+
+        .stopwatch-display {
+            background: #000;
+            border: 2px solid #00f2ff;
+            padding: 20px;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .stopwatch-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .util-btn {
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid #00f2ff;
+            color: #00f2ff;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 2px;
+        }
+
+        .util-btn:hover {
+            background: rgba(0, 242, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+        }
+
+        .translator-input, .translator-select {
+            background: #000;
+            border: 1px solid #00f2ff;
+            color: #00f2ff;
+            padding: 10px;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
+        }
+
+        .translator-input {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        #terminal {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+
+        .terminal-prompt {
+            color: #00f2ff;
+            font-weight: bold;
+        }
+
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid #00f2ff;
+        }
+
+        .terminal-input-container span {
+            color: #00f2ff;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00f2ff;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .voice-toggle {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .voice-toggle input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1200px) {
+            #main-interface {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+            
+            #left-panel { grid-column: 1; grid-row: 1; }
+            #center-panel { grid-column: 1; grid-row: 2; }
+            #right-panel { grid-column: 1; grid-row: 3; }
+            #terminal { grid-column: 1; grid-row: 4; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="scan-line"></div>
+
+    <div id="login-screen">
+        <h1 class="login-title">J.A.R.V.I.S.</h1>
+        <div class="login-box">
+            <input type="password" id="password-input" placeholder="ENTER PASSWORD" autocomplete="off">
+            <button id="login-btn">ACCESS SYSTEM</button>
+            <div class="login-error" id="login-error"></div>
+        </div>
+    </div>
+
+    <div id="main-interface">
+        <div id="left-panel" class="panel">
+            <div class="status-header">
+                <h1>J.A.R.V.I.S.</h1>
+                <div class="status">SYSTEM ONLINE</div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>CPU</span>
+                        <span id="cpu-value">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="cpu-bar"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>RAM</span>
+                        <span id="ram-value">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="ram-bar"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>CORE TEMP</span>
+                        <span id="temp-value">0°C</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="temp-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="letter-spacing: 3px; margin: 25px 0 15px 0; font-size: 0.9rem;">ADVANCED SERVICES</h3>
+            <button class="service-btn" id="proxy-btn">PROXY HUB</button>
+            <button class="service-btn" id="movie-btn">MOVIE SERVICE</button>
+
+            <div class="calculator">
+                <h3 style="letter-spacing: 3px; margin-bottom: 15px; font-size: 0.9rem;">CALCULATOR</h3>
+                <div class="calc-display" id="calc-display">0</div>
+                <div class="calc-buttons">
+                    <button class="calc-btn" data-val="7">7</button>
+                    <button class="calc-btn" data-val="8">8</button>
+                    <button class="calc-btn" data-val="9">9</button>
+                    <button class="calc-btn" data-val="/">/</button>
+                    <button class="calc-btn" data-val="4">4</button>
+                    <button class="calc-btn" data-val="5">5</button>
+                    <button class="calc-btn" data-val="6">6</button>
+                    <button class="calc-btn" data-val="*">*</button>
+                    <button class="calc-btn" data-val="1">1</button>
+                    <button class="calc-btn" data-val="2">2</button>
+                    <button class="calc-btn" data-val="3">3</button>
+                    <button class="calc-btn" data-val="-">-</button>
+                    <button class="calc-btn" data-val="0">0</button>
+                    <button class="calc-btn" data-val=".">.</button>
+                    <button class="calc-btn" id="calc-equals">=</button>
+                    <button class="calc-btn" data-val="+">+</button>
+                    <button class="calc-btn clear" id="calc-clear" style="grid-column: span 4;">C</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="center-panel" class="panel">
+            <div class="hud-container">
+                <div class="hud-ring ring-outer"></div>
+                <div class="hud-ring ring-middle"></div>
+                <div class="hud-ring ring-inner"></div>
+                <div class="hud-center" id="hud-center">
+                    <h2>J.A.R.V.I.S.</h2>
+                    <div class="hud-clock" id="hud-clock">00:00:00</div>
+                    <div class="hud-subtitle">Welcome back, James</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="right-panel" class="panel">
+            <div class="utility-section">
+                <h3>STOPWATCH</h3>
+                <div class="stopwatch-display" id="stopwatch-display">00:00</div>
+                <div class="stopwatch-controls">
+                    <button class="util-btn" id="stopwatch-start">START</button>
+                    <button class="util-btn" id="stopwatch-stop">STOP</button>
+                    <button class="util-btn" id="stopwatch-reset">RESET</button>
+                </div>
+            </div>
+
+            <div class="utility-section">
+                <h3>TRANSLATOR</h3>
+                <textarea class="translator-input" id="translate-input" placeholder="Enter English text..."></textarea>
+                <select class="translator-select" id="translate-lang">
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="ja">Japanese</option>
+                    <option value="de">German</option>
+                </select>
+                <button class="util-btn" id="translate-btn" style="width: 100%;">TRANSLATE</button>
+            </div>
+
+            <div class="utility-section">
+                <h3>HTML SANDBOX</h3>
+                <textarea class="sandbox-editor" id="sandbox-code" placeholder="Enter HTML/CSS/JS code here..."></textarea>
+                <button class="util-btn" id="sandbox-execute" style="width: 100%; margin-bottom: 10px;">EXECUTE CODE</button>
+                <button class="util-btn" id="sandbox-btn" style="width: 100%;">OPEN IN NEW WINDOW</button>
+            </div>
+        </div>
+
+        <div id="terminal" class="panel">
+            <div class="voice-toggle">
+                <input type="checkbox" id="voice-enabled" checked>
+                <label for="voice-enabled">VOICE SYNTHESIS ENABLED</label>
+            </div>
+            <div class="terminal-output" id="terminal-output"></div>
+            <div class="terminal-input-container">
+                <span>J.A.R.V.I.S:~$</span>
+                <input type="text" class="terminal-input" id="terminal-input" placeholder="Enter command..." autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let calcDisplay = '0';
+        let stopwatchSeconds = 0;
+        let stopwatchInterval = null;
+
+        const jokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs.",
+            "A SQL query walks into a bar, walks up to two tables and asks: 'Can I join you?'",
+            "Why do Java developers wear glasses? Because they don't C#.",
+            "There are 10 types of people in the world: those who understand binary and those who don't.",
+            "I would tell you a UDP joke, but you might not get it."
+        ];
+
+        const translations = {
+            es: { hello: 'hola', world: 'mundo', thank: 'gracias', you: 'tú', good: 'bueno', bad: 'malo' },
+            fr: { hello: 'bonjour', world: 'monde', thank: 'merci', you: 'vous', good: 'bon', bad: 'mauvais' },
+            ja: { hello: 'こんにちは', world: '世界', thank: 'ありがとう', you: 'あなた', good: '良い', bad: '悪い' },
+            de: { hello: 'hallo', world: 'welt', thank: 'danke', you: 'sie', good: 'gut', bad: 'schlecht' }
+        };
+
+        function attemptLogin() {
+            const password = document.getElementById('password-input').value;
+            if (password === 'daddyjames') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-interface').classList.add('active');
+                setTimeout(() => {
+                    terminalPrint("System initialized. Welcome back, James.");
+                    speak("System initialized. Welcome back, James.");
+                }, 500);
+                startSystemMetrics();
+                startClock();
+            } else {
+                document.getElementById('login-error').textContent = 'ACCESS DENIED';
+                setTimeout(() => {
+                    document.getElementById('login-error').textContent = '';
+                }, 2000);
+            }
+        }
+
+        document.getElementById('login-btn').addEventListener('click', attemptLogin);
+        document.getElementById('password-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin();
+        });
+
+        function startClock() {
+            function updateClock() {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                const s = String(now.getSeconds()).padStart(2, '0');
+                document.getElementById('hud-clock').textContent = `${h}:${m}:${s}`;
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function startSystemMetrics() {
+            function updateMetrics() {
+                const cpu = Math.floor(Math.random() * 40) + 30;
+                const ram = Math.floor(Math.random() * 30) + 50;
+                const temp = Math.floor(Math.random() * 20) + 45;
+
+                document.getElementById('cpu-bar').style.width = cpu + '%';
+                document.getElementById('cpu-value').textContent = cpu + '%';
+                
+                document.getElementById('ram-bar').style.width = ram + '%';
+                document.getElementById('ram-value').textContent = ram + '%';
+                
+                document.getElementById('temp-bar').style.width = (temp / 100 * 100) + '%';
+                document.getElementById('temp-value').textContent = temp + '°C';
+            }
+            updateMetrics();
+            setInterval(updateMetrics, 1200);
+        }
+
+        document.querySelectorAll('.calc-btn[data-val]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = btn.getAttribute('data-val');
+                if (calcDisplay === '0' && val !== '.') {
+                    calcDisplay = val;
+                } else {
+                    calcDisplay += val;
+                }
+                document.getElementById('calc-display').textContent = calcDisplay;
+            });
+        });
+
+        document.getElementById('calc-equals').addEventListener('click', () => {
+            try {
+                const sanitized = calcDisplay.replace(/[^0-9+\-*/.()]/g, '');
+                const result = Function('"use strict"; return (' + sanitized + ')')();
+                calcDisplay = String(result);
+                document.getElementById('calc-display').textContent = calcDisplay;
+            } catch (e) {
+                document.getElementById('calc-display').textContent = 'ERROR';
+                setTimeout(() => {
+                    calcDisplay = '0';
+                    document.getElementById('calc-display').textContent = '0';
+                }, 1000);
+            }
+        });
+
+        document.getElementById('calc-clear').addEventListener('click', () => {
+            calcDisplay = '0';
+            document.getElementById('calc-display').textContent = '0';
+        });
+
+        document.getElementById('stopwatch-start').addEventListener('click', () => {
+            if (!stopwatchInterval) {
+                stopwatchInterval = setInterval(() => {
+                    stopwatchSeconds++;
+                    const mins = Math.floor(stopwatchSeconds / 60);
+                    const secs = stopwatchSeconds % 60;
+                    document.getElementById('stopwatch-display').textContent = 
+                        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                }, 1000);
+            }
+        });
+
+        document.getElementById('stopwatch-stop').addEventListener('click', () => {
+            if (stopwatchInterval) {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+            }
+        });
+
+        document.getElementById('stopwatch-reset').addEventListener('click', () => {
+            if (stopwatchInterval) {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+            }
+            stopwatchSeconds = 0;
+            document.getElementById('stopwatch-display').textContent = '00:00';
+        });
+
+        document.getElementById('translate-btn').addEventListener('click', () => {
+            const text = document.getElementById('translate-input').value.toLowerCase();
+            const lang = document.getElementById('translate-lang').value;
+            
+            let translated = text;
+            const dict = translations[lang];
+            for (let word in dict) {
+                translated = translated.replace(new RegExp(word, 'gi'), dict[word]);
+            }
+            
+            const msg = `Translation to ${lang}: ${translated}`;
+            terminalPrint(msg);
+            speak(msg);
+        });
+
+        document.getElementById('proxy-btn').addEventListener('click', () => {
+            const url = 'https://cdn.jsdelivr.net/gh/jamesbrownedu/unblocked@main/index.html';
+            const win = window.open('about:blank', '_blank');
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+                    win.document.open();
+                    win.document.write(html);
+                    win.document.close();
+                    terminalPrint('Proxy Hub launched successfully.');
+                    speak('Proxy Hub launched.');
+                })
+                .catch(err => {
+                    terminalPrint('Error loading Proxy Hub: ' + err.message);
+                });
+        });
+
+        document.getElementById('movie-btn').addEventListener('click', () => {
+            const url = 'https://cdn.jsdelivr.net/gh/jamesbrownedu/movie@main/movie.html';
+            const win = window.open('about:blank', '_blank');
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+                    win.document.open();
+                    win.document.write(html);
+                    win.document.close();
+                    terminalPrint('Movie Service launched successfully.');
+                    speak('Movie Service launched.');
+                })
+                .catch(err => {
+                    terminalPrint('Error loading Movie Service: ' + err.message);
+                });
+        });
+
+        document.getElementById('sandbox-execute').addEventListener('click', () => {
+            const code = document.getElementById('sandbox-code').value;
+            if (code.trim()) {
+                const win = window.open('about:blank', '_blank');
+                win.document.open();
+                win.document.write(code);
+                win.document.close();
+                terminalPrint('Code executed in new window.');
+                speak('Code executed.');
+            } else {
+                terminalPrint('No code to execute.');
+            }
+        });
+
+        document.getElementById('sandbox-btn').addEventListener('click', () => {
+            const code = document.getElementById('sandbox-code').value;
+            const win = window.open('about:blank', '_blank');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            background: #02050a;
+                            color: #00f2ff;
+                            font-family: 'Courier New', monospace;
+                        }
+                        textarea {
+                            width: 100%;
+                            height: 400px;
+                            background: #000;
+                            color: #00f2ff;
+                            border: 2px solid #00f2ff;
+                            padding: 15px;
+                            font-family: 'Courier New', monospace;
+                            font-size: 14px;
+                            resize: vertical;
+                        }
+                        button {
+                            background: transparent;
+                            border: 2px solid #00f2ff;
+                            color: #00f2ff;
+                            padding: 12px 30px;
+                            font-family: 'Courier New', monospace;
+                            font-size: 1rem;
+                            cursor: pointer;
+                            margin-top: 15px;
+                            letter-spacing: 3px;
+                        }
+                        button:hover {
+                            background: rgba(0, 242, 255, 0.2);
+                            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>J.A.R.V.I.S. HTML SANDBOX</h1>
+                    <textarea id="code">${code}</textarea>
+                    <button onclick="executeCode()">EXECUTE CODE</button>
+                    <script>
+                        function executeCode() {
+                            const code = document.getElementById('code').value;
+                            const newDoc = document.open();
+                            newDoc.write(code);
+                            newDoc.close();
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            terminalPrint('HTML Sandbox opened in new window.');
+            speak('HTML Sandbox ready.');
+        });
+
+        function speak(text) {
+            if (!document.getElementById('voice-enabled').checked) return;
+            
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.pitch = 0.85;
+                utterance.rate = 1.05;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function terminalPrint(text, typing = true) {
+            const output = document.getElementById('terminal-output');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            
+            if (typing) {
+                let i = 0;
+                const prefix = '<span class="terminal-prompt">[J.A.R.V.I.S]:</span> ';
+                line.innerHTML = prefix;
+                output.appendChild(line);
+                
+                const typeInterval = setInterval(() => {
+                    if (i < text.length) {
+                        line.innerHTML = prefix + text.substring(0, i + 1);
+                        i++;
+                        output.scrollTop = output.scrollHeight;
+                    } else {
+                        clearInterval(typeInterval);
+                    }
+                }, 18);
+            } else {
+                line.innerHTML = `<span class="terminal-prompt">[J.A.R.V.I.S]:</span> ${text}`;
+                output.appendChild(line);
+            }
+            
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function calculateAge(birthDate) {
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        function processCommand(cmd) {
+            const lower = cmd.toLowerCase();
+            
+            if (lower.match(/hello|hi|hey|wake up/)) {
+                const response = "Hello James. Systems are at 100%.";
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/birthday|born/)) {
+                const age = calculateAge('2011-09-22');
+                const response = `Your birthday is September 22nd, 2011. You are ${age} years old.`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/status|report|system/)) {
+                const cpu = document.getElementById('cpu-value').textContent;
+                const ram = document.getElementById('ram-value').textContent;
+                const temp = document.getElementById('temp-value').textContent;
+                const response = `All systems nominal. CPU: ${cpu}, RAM: ${ram}, Core Temp: ${temp}`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/creator|made|built/)) {
+                const response = "I was developed by James Brown.";
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/joke|funny/)) {
+                const joke = jokes[Math.floor(Math.random() * jokes.length)];
+                terminalPrint(joke);
+                speak(joke);
+            }
+            else if (lower.match(/time/)) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                const response = `The current time is ${timeStr}`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/clear|reset/)) {
+                document.getElementById('terminal-output').innerHTML = '';
+                speak('Terminal cleared.');
+            }
+            else if (lower.match(/proxy|unblock/)) {
+                document.getElementById('proxy-btn').click();
+            }
+            else if (lower.match(/movie|cinema|watch/)) {
+                document.getElementById('movie-btn').click();
+            }
+            else if (lower.match(/hack/)) {
+                const hackWin = window.open('', '_blank', 'width=600,height=400');
+                hackWin.document.write(`
+                    <style>
+                        body { background: #000; color: #0f0; font-family: 'Courier New'; padding: 20px; }
+                        .line { margin: 5px 0; }
+                    </style>
+                    <body>
+                        <div id="output"></div>
+                        <script>
+                            const lines = [
+                                'Initializing hack sequence...',
+                                'Connecting to mainframe...',
+                                'Bypassing firewall...',
+                                'Decrypting password hash...',
+                                'Access granted.',
+                                'HACK COMPLETE'
+                            ];
+                            let i = 0;
+                            const interval = setInterval(() => {
+                                if (i < lines.length) {
+                                    document.getElementById('output').innerHTML += 
+                                        '<div class="line">> ' + lines[i] + '</div>';
+                                    i++;
+                                } else {
+                                    clearInterval(interval);
+                                }
+                            }, 800);
+                        <\/script>
+                    </body>
+                `);
+                terminalPrint('Hack sequence initiated.');
+                speak('Hack sequence initiated.');
+            }
+            else if (lower.match(/countdown/)) {
+                const seconds = parseInt(prompt('Enter countdown seconds:'));
+                if (!isNaN(seconds)) {
+                    let remaining = seconds;
+                    const countInterval = setInterval(() => {
+                        terminalPrint(`${remaining}...`, false);
+                        speak(String(remaining));
+                        remaining--;
+                        if (remaining < 0) {
+                            clearInterval(countInterval);
+                            terminalPrint('Countdown complete!', false);
+                            speak('Countdown complete!');
+                        }
+                    }, 1000);
+                }
+            }
+            else if (lower.match(/iron man|stark/)) {
+                const response = "Mr. Stark would be proud of this interface.";
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/help/)) {
+                const help = `Available commands: hello, birthday, status, creator, joke, time, clear, proxy, movie, hack, countdown, help`;
+                terminalPrint(help);
+            }
+            else {
+                const response = `Command not recognized: ${cmd}`;
+                terminalPrint(response);
+            }
+        }
+
+        document.getElementById('hud-center').addEventListener('click', () => {
+            const responses = [
+                "All systems operational, sir.",
+                "Running diagnostics... Everything looks perfect.",
+                "How may I assist you today, James?",
+                "At your service, sir.",
+                "Systems are running at optimal capacity."
+            ];
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            terminalPrint(response);
+            speak(response);
+        });
+
+        document.getElementById('terminal-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target.value.trim();
+                if (input) {
+                    terminalPrint(`> ${input}`, false);
+                    processCommand(input);
+                    e.target.value = '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
