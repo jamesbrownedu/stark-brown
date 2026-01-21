@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. Interface</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2300f2ff'/></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="%2300f2ff"/><circle cx="12" cy="12" r="8" fill="none" stroke="%2300f2ff" stroke-width="1" opacity="0.5"/><line x1="12" y1="0" x2="12" y2="24" stroke="%2300f2ff" stroke-width="1" opacity="0.7"/><line x1="0" y1="12" x2="24" y2="12" stroke="%2300f2ff" stroke-width="1" opacity="0.7"/></svg>'), auto;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #02050a 0%, #05080f 100%);
+            color: var(--primary-color);
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+            --primary-color: #00f2ff;
+            --primary-glow: rgba(0, 242, 255, 0.4);
+            --primary-bright: rgba(0, 242, 255, 0.8);
+        }
+
+        body.theme-red {
+            --primary-color: #ff0055;
+            --primary-glow: rgba(255, 0, 85, 0.4);
+            --primary-bright: rgba(255, 0, 85, 0.8);
+        }
+
+        body.theme-green {
+            --primary-color: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.4);
+            --primary-bright: rgba(0, 255, 136, 0.8);
+        }
+
+        body.theme-purple {
+            --primary-color: #b833ff;
+            --primary-glow: rgba(184, 51, 255, 0.4);
+            --primary-bright: rgba(184, 51, 255, 0.8);
+        }
+
+        body.theme-gold {
+            --primary-color: #ffd700;
+            --primary-glow: rgba(255, 215, 0, 0.4);
+            --primary-bright: rgba(255, 215, 0, 0.8);
+        }
+
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--primary-glow) 1px, transparent 1px),
+                linear-gradient(90deg, var(--primary-glow) 1px, transparent 1px);
+            background-size: 45px 45px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.1;
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            box-shadow: 0 0 20px var(--primary-color);
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: var(--scanline-opacity, 1);
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid var(--primary-color);
+            padding: 15px 25px;
+            border-radius: 4px;
+            box-shadow: 0 0 30px var(--primary-glow);
+            z-index: 10001;
+            animation: notifSlide 0.4s ease;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        @keyframes notifSlide {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+        }
+
+        .loading-spinner {
+            width: 120px;
+            height: 120px;
+            position: relative;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            border: 3px solid transparent;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .spinner-ring:nth-child(1) {
+            width: 120px;
+            height: 120px;
+            animation-duration: 1.5s;
+        }
+
+        .spinner-ring:nth-child(2) {
+            width: 90px;
+            height: 90px;
+            top: 15px;
+            left: 15px;
+            animation-duration: 2s;
+            border-top-color: var(--primary-bright);
+        }
+
+        .spinner-ring:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 30px;
+            left: 30px;
+            animation-duration: 2.5s;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #panic-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 20000;
+            display: none;
+        }
+
+        #panic-overlay.active {
+            display: block;
+        }
+
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0a1628 0%, #02050a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.8s, visibility 0.8s;
+        }
+
+        #login-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .login-title {
+            font-size: 5rem;
+            letter-spacing: 30px;
+            text-shadow: 0 0 40px var(--primary-color), 0 0 80px var(--primary-color), 0 0 120px var(--primary-color);
+            margin-bottom: 80px;
+            animation: pulse 2s ease-in-out infinite;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 50px 70px;
+            border: 3px solid var(--primary-color);
+            box-shadow: 0 0 40px var(--primary-glow), inset 0 0 30px var(--primary-glow);
+            backdrop-filter: blur(20px);
+            position: relative;
+        }
+
+        .login-box input, .login-box button {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 18px 35px;
+            font-size: 1.3rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 5px;
+            width: 400px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 15px var(--primary-glow), 0 0 20px var(--primary-glow);
+            transition: all 0.3s;
+        }
+
+        .login-box button {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .login-box button:hover {
+            background: var(--primary-glow);
+            box-shadow: 0 0 35px var(--primary-glow);
+            transform: scale(1.03);
+        }
+
+        .login-error {
+            color: #ff0055;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        #main-interface {
+            display: none;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 1fr 220px;
+            gap: 15px;
+            padding: 15px;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        #main-interface.active {
+            display: grid;
+        }
+
+        .panel {
+            background: rgba(5, 15, 30, 0.85);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 20px var(--primary-glow);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        #left-panel {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .status-header {
+            text-align: center;
+            padding: 15px;
+            background: var(--primary-glow);
+            border-bottom: 2px solid var(--primary-color);
+            margin: -20px -20px 20px -20px;
+        }
+
+        .status-header h1 {
+            font-size: 1.8rem;
+            letter-spacing: 8px;
+            text-shadow: 0 0 15px var(--primary-color);
+        }
+
+        .status-header .status {
+            font-size: 0.8rem;
+            color: #0f0;
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+
+        .metric {
+            margin-bottom: 20px;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .metric-bar {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-bright) 100%);
+            box-shadow: 0 0 15px var(--primary-color);
+            transition: width 0.5s ease;
+        }
+
+        .service-btn, .util-btn, .calc-btn {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 0 0 10px var(--primary-color);
+            box-shadow: 0 0 15px var(--primary-glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-btn:hover, .util-btn:hover, .calc-btn:hover {
+            background: var(--primary-glow);
+            box-shadow: 0 0 35px var(--primary-glow);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .service-btn::before, .util-btn::before, .calc-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: var(--primary-bright);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .service-btn:hover::before, .util-btn:hover::before, .calc-btn:hover::before {
+            width: 300px;
+            height: 300px;
+            opacity: 0;
+        }
+
+        .calc-display, .stopwatch-display {
+            background: #000;
+            border: 2px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            text-align: right;
+            min-height: 50px;
+            box-shadow: inset 0 0 15px var(--primary-glow);
+            color: var(--primary-color);
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .calc-btn {
+            padding: 15px;
+            font-size: 1.1rem;
+        }
+
+        .calc-btn.clear {
+            background: rgba(255, 0, 85, 0.1);
+            border-color: #ff0055;
+            color: #ff0055;
+            grid-column: span 4;
+        }
+
+        .calc-btn.clear:hover {
+            background: rgba(255, 0, 85, 0.3);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
+        }
+
+        #center-panel {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hud-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+        }
+
+        .hud-ring {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-outer {
+            width: 350px;
+            height: 350px;
+            border: 2px dashed var(--primary-color);
+            animation: rotate 25s linear infinite;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .ring-middle {
+            width: 280px;
+            height: 280px;
+            border: 3px solid var(--primary-color);
+            animation: rotate 10s linear infinite;
+            box-shadow: 0 0 25px var(--primary-glow);
+        }
+
+        .ring-inner {
+            width: 210px;
+            height: 210px;
+            border: 2px solid var(--primary-color);
+            animation: rotate-reverse 30s linear infinite;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes rotate-reverse {
+            from { transform: translate(-50%, -50%) rotate(360deg); }
+            to { transform: translate(-50%, -50%) rotate(0deg); }
+        }
+
+        .hud-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hud-center:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .hud-center h2 {
+            font-size: 2rem;
+            letter-spacing: 12px;
+            text-shadow: 0 0 25px var(--primary-color), 0 0 50px var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .hud-center:hover h2 {
+            text-shadow: 0 0 30px var(--primary-color), 0 0 60px var(--primary-color);
+        }
+
+        .hud-clock {
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 25px var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .hud-subtitle {
+            font-size: 1rem;
+            color: var(--primary-bright);
+            letter-spacing: 3px;
+        }
+
+        #right-panel {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .utility-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--primary-glow);
+        }
+
+        .utility-section:last-child {
+            border-bottom: none;
+        }
+
+        .utility-section h3 {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .sandbox-editor, .translator-input, input[type="text"]:not(.terminal-input):not(#password-input), textarea, select {
+            background: #000;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 10px;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 80px;
+            box-shadow: inset 0 0 15px var(--primary-glow);
+            margin-bottom: 10px;
+        }
+
+        .sandbox-editor:focus, .translator-input:focus, input:focus, textarea:focus, select:focus {
+            outline: none;
+            box-shadow: inset 0 0 20px var(--primary-glow);
+        }
+
+        .sandbox-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sandbox-tab {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sandbox-tab.active {
+            background: var(--primary-glow);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .sandbox-tab:hover {
+            background: var(--primary-glow);
+        }
+
+        #terminal {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+
+        .terminal-prompt {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid var(--primary-color);
+        }
+
+        .terminal-input-container span {
+            color: var(--primary-color);
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .controls-row label {
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .controls-row select, .controls-row input[type="range"] {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: rgba(0, 0, 0, 0.5);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        @media (max-width: 1200px) {
+            #main-interface {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+            
+            #left-panel { grid-column: 1; grid-row: 1; }
+            #center-panel { grid-column: 1; grid-row: 2; }
+            #right-panel { grid-column: 1; grid-row: 3; }
+            #terminal { grid-column: 1; grid-row: 4; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div class="grid-bg"></div>
+    <div class="scan-line"></div>
+
+    <div id="panic-overlay">
+        <iframe src="https://clever.com" style="width:100%;height:100%;border:none;"></iframe>
+    </div>
+
+    <div id="login-screen">
+        <h1 class="login-title">J.A.R.V.I.S.</h1>
+        <div class="login-box">
+            <input type="password" id="password-input" placeholder="ENTER PASSWORD" autocomplete="off">
+            <button id="login-btn">ACCESS SYSTEM</button>
+            <div class="login-error" id="login-error"></div>
+        </div>
+    </div>
+
+    <div id="main-interface">
+        <div id="left-panel" class="panel">
+            <div class="status-header">
+                <h1>J.A.R.V.I.S.</h1>
+                <div class="status">SYSTEM ONLINE</div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>CPU</span>
+                        <span id="cpu-value">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="cpu-bar"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>RAM</span>
+                        <span id="ram-value">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="ram-bar"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>CORE TEMP</span>
+                        <span id="temp-value">0°C</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="temp-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="letter-spacing: 3px; margin: 25px 0 15px 0; font-size: 0.9rem;">ADVANCED SERVICES</h3>
+            <button class="service-btn" id="proxy-btn">PROXY HUB</button>
+            <button class="service-btn" id="movie-btn">MOVIE SERVICE</button>
+
+            <div class="calculator">
+                <h3 style="letter-spacing: 3px; margin-bottom: 15px; font-size: 0.9rem;">CALCULATOR</h3>
+                <div class="calc-display" id="calc-display">0</div>
+                <div class="calc-buttons">
+                    <button class="calc-btn" data-val="sin">sin</button>
+                    <button class="calc-btn" data-val="cos">cos</button>
+                    <button class="calc-btn" data-val="tan">tan</button>
+                    <button class="calc-btn" data-val="sqrt">√</button>
+                    <button class="calc-btn" data-val="7">7</button>
+                    <button class="calc-btn" data-val="8">8</button>
+                    <button class="calc-btn" data-val="9">9</button>
+                    <button class="calc-btn" data-val="/">/</button>
+                    <button class="calc-btn" data-val="4">4</button>
+                    <button class="calc-btn" data-val="5">5</button>
+                    <button class="calc-btn" data-val="6">6</button>
+                    <button class="calc-btn" data-val="*">*</button>
+                    <button class="calc-btn" data-val="1">1</button>
+                    <button class="calc-btn" data-val="2">2</button>
+                    <button class="calc-btn" data-val="3">3</button>
+                    <button class="calc-btn" data-val="-">-</button>
+                    <button class="calc-btn" data-val="0">0</button>
+                    <button class="calc-btn" data-val=".">.</button>
+                    <button class="calc-btn" id="calc-equals">=</button>
+                    <button class="calc-btn" data-val="+">+</button>
+                    <button class="calc-btn" data-val="^">^</button>
+                    <button class="calc-btn" data-val="log">log</button>
+                    <button class="calc-btn" data-val="²">x²</button>
+                    <button class="calc-btn" data-val="π">π</button>
+                    <button class="calc-btn clear" id="calc-clear">C</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="center-panel" class="panel">
+            <div class="hud-container">
+                <div class="hud-ring ring-outer"></div>
+                <div class="hud-ring ring-middle"></div>
+                <div class="hud-ring ring-inner"></div>
+                <div class="hud-center" id="hud-center">
+                    <h2>J.A.R.V.I.S.</h2>
+                    <div class="hud-clock" id="hud-clock">00:00:00</div>
+                    <div class="hud-subtitle">Welcome back, James</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="right-panel" class="panel">
+            <div class="utility-section">
+                <h3>THEME</h3>
+                <select id="theme-select" class="translator-select">
+                    <option value="cyan">Cyan (Default)</option>
+                    <option value="red">Red</option>
+                    <option value="green">Green</option>
+                    <option value="purple">Purple</option>
+                    <option value="gold">Gold</option>
+                </select>
+            </div>
+
+            <div class="utility-section">
+                <h3>SCANLINE INTENSITY</h3>
+                <input type="range" id="scanline-slider" min="0" max="100" value="100">
+            </div>
+
+            <div class="utility-section">
+                <h3>STOPWATCH</h3>
+                <div class="stopwatch-display" id="stopwatch-display">00:00</div>
+                <div class="stopwatch-controls">
+                    <button class="util-btn" id="stopwatch-start">START</button>
+                    <button class="util-btn" id="stopwatch-stop">STOP</button>
+                    <button class="util-btn" id="stopwatch-reset">RESET</button>
+                </div>
+            </div>
+
+            <div class="utility-section">
+                <h3>TRANSLATOR</h3>
+                <textarea class="translator-input" id="translate-input" placeholder="Enter text..."></textarea>
+                <select class="translator-select" id="translate-lang">
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="ja">Japanese</option>
+                    <option value="de">German</option>
+                </select>
+                <button class="util-btn" id="translate-btn">TRANSLATE</button>
+            </div>
+
+            <div class="utility-section">
+                <h3>DATA URL GENERATOR</h3>
+                <input type="text" id="url-input" placeholder="Enter URL..." style="min-height: 40px;">
+                <button class="util-btn" id="url-convert-btn">GENERATE DATA URL</button>
+            </div>
+
+            <div class="utility-section">
+                <h3>BASE64 ENCODER</h3>
+                <textarea id="base64-input" placeholder="Enter text..."></textarea>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="util-btn" id="base64-encode-btn">ENCODE</button>
+                    <button class="util-btn" id="base64-decode-btn">DECODE</button>
+                </div>
+            </div>
+
+            <div class="utility-section">
+                <h3>FILE ENCODER</h3>
+                <input type="file" id="file-input" accept=".html" style="margin-bottom: 10px;">
+                <button class="util-btn" id="file-encode-btn">ENCODE FILE</button>
+            </div>
+
+            <div class="utility-section">
+                <h3>NOTES</h3>
+                <textarea id="notes-area" placeholder="Your notes are saved automatically..." style="min-height: 100px;"></textarea>
+            </div>
+
+            <div class="utility-section">
+                <h3>HTML SANDBOX</h3>
+                <div class="sandbox-tabs" id="sandbox-tabs"></div>
+                <button class="util-btn" id="new-tab-btn" style="margin-bottom: 10px;">+ NEW TAB</button>
+                <textarea class="sandbox-editor" id="sandbox-code" placeholder="Enter HTML/CSS/JS code here..."></textarea>
+                <button class="util-btn" id="sandbox-execute" style="margin-bottom: 10px;">EXECUTE CODE</button>
+                <button class="util-btn" id="sandbox-btn">OPEN IN NEW WINDOW</button>
+            </div>
+        </div>
+
+        <div id="terminal" class="panel">
+            <div class="controls-row">
+                <input type="checkbox" id="voice-enabled" checked>
+                <label for="voice-enabled">VOICE SYNTHESIS</label>
+                <select id="voice-select" style="flex: 2;">
+                    <option>Loading voices...</option>
+                </select>
+            </div>
+            <div class="terminal-output" id="terminal-output"></div>
+            <div class="terminal-input-container">
+                <span>J.A.R.V.I.S:~$</span>
+                <input type="text" class="terminal-input" id="terminal-input" placeholder="Enter command..." autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let calcDisplay = '0';
+        let stopwatchSeconds = 0;
+        let stopwatchInterval = null;
+        let availableVoices = [];
+        let selectedVoice = null;
+        let sandboxTabs = JSON.parse(localStorage.getItem('sandboxTabs')) || [{ name: 'Tab 1', code: '' }];
+        let currentTabIndex = 0;
+
+        // Expanded translations
+        const translations = {
+            es: { 
+                hello: 'hola', world: 'mundo', thank: 'gracias', you: 'tú', good: 'bueno', bad: 'malo',
+                yes: 'sí', no: 'no', please: 'por favor', sorry: 'lo siento', welcome: 'bienvenido',
+                goodbye: 'adiós', friend: 'amigo', love: 'amor', life: 'vida', time: 'tiempo',
+                day: 'día', night: 'noche', food: 'comida', water: 'agua', house: 'casa',
+                man: 'hombre', woman: 'mujer', child: 'niño', family: 'familia', work: 'trabajo',
+                school: 'escuela', book: 'libro', car: 'coche', dog: 'perro', cat: 'gato',
+                help: 'ayuda', money: 'dinero', beautiful: 'hermoso', happy: 'feliz', sad: 'triste',
+                big: 'grande', small: 'pequeño', hot: 'caliente', cold: 'frío', new: 'nuevo',
+                old: 'viejo', fast: 'rápido', slow: 'lento', today: 'hoy', tomorrow: 'mañana',
+                yesterday: 'ayer', morning: 'mañana', afternoon: 'tarde', evening: 'noche'
+            },
+            fr: { 
+                hello: 'bonjour', world: 'monde', thank: 'merci', you: 'vous', good: 'bon', bad: 'mauvais',
+                yes: 'oui', no: 'non', please: "s'il vous plaît", sorry: 'désolé', welcome: 'bienvenue',
+                goodbye: 'au revoir', friend: 'ami', love: 'amour', life: 'vie', time: 'temps',
+                day: 'jour', night: 'nuit', food: 'nourriture', water: 'eau', house: 'maison',
+                man: 'homme', woman: 'femme', child: 'enfant', family: 'famille', work: 'travail',
+                school: 'école', book: 'livre', car: 'voiture', dog: 'chien', cat: 'chat',
+                help: 'aide', money: 'argent', beautiful: 'beau', happy: 'heureux', sad: 'triste',
+                big: 'grand', small: 'petit', hot: 'chaud', cold: 'froid', new: 'nouveau',
+                old: 'vieux', fast: 'rapide', slow: 'lent', today: "aujourd'hui", tomorrow: 'demain',
+                yesterday: 'hier', morning: 'matin', afternoon: 'après-midi', evening: 'soir'
+            },
+            ja: { 
+                hello: 'こんにちは', world: '世界', thank: 'ありがとう', you: 'あなた', good: '良い', bad: '悪い',
+                yes: 'はい', no: 'いいえ', please: 'お願いします', sorry: 'ごめんなさい', welcome: 'ようこそ',
+                goodbye: 'さようなら', friend: '友達', love: '愛', life: '人生', time: '時間',
+                day: '日', night: '夜', food: '食べ物', water: '水', house: '家',
+                man: '男', woman: '女', child: '子供', family: '家族', work: '仕事',
+                school: '学校', book: '本', car: '車', dog: '犬', cat: '猫',
+                help: '助け', money: 'お金', beautiful: '美しい', happy: '幸せ', sad: '悲しい',
+                big: '大きい', small: '小さい', hot: '暑い', cold: '寒い', new: '新しい',
+                old: '古い', fast: '速い', slow: '遅い', today: '今日', tomorrow: '明日',
+                yesterday: '昨日', morning: '朝', afternoon: '午後', evening: '夕方'
+            },
+            de: { 
+                hello: 'hallo', world: 'welt', thank: 'danke', you: 'sie', good: 'gut', bad: 'schlecht',
+                yes: 'ja', no: 'nein', please: 'bitte', sorry: 'entschuldigung', welcome: 'willkommen',
+                goodbye: 'auf wiedersehen', friend: 'freund', love: 'liebe', life: 'leben', time: 'zeit',
+                day: 'tag', night: 'nacht', food: 'essen', water: 'wasser', house: 'haus',
+                man: 'mann', woman: 'frau', child: 'kind', family: 'familie', work: 'arbeit',
+                school: 'schule', book: 'buch', car: 'auto', dog: 'hund', cat: 'katze',
+                help: 'hilfe', money: 'geld', beautiful: 'schön', happy: 'glücklich', sad: 'traurig',
+                big: 'groß', small: 'klein', hot: 'heiß', cold: 'kalt', new: 'neu',
+                old: 'alt', fast: 'schnell', slow: 'langsam', today: 'heute', tomorrow: 'morgen',
+                yesterday: 'gestern', morning: 'morgen', afternoon: 'nachmittag', evening: 'abend'
+            }
+        };
+
+        const jokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs.",
+            "A SQL query walks into a bar, walks up to two tables and asks: 'Can I join you?'",
+            "Why do Java developers wear glasses? Because they don't C#.",
+            "There are 10 types of people in the world: those who understand binary and those who don't.",
+            "I would tell you a UDP joke, but you might not get it.",
+            "Why did the developer go broke? Because he used up all his cache.",
+            "How many programmers does it take to change a light bulb? None, it's a hardware problem."
+        ];
+
+        const quotes = [
+            "The only way to do great work is to love what you do. - Steve Jobs",
+            "Innovation distinguishes between a leader and a follower. - Steve Jobs",
+            "Stay hungry, stay foolish. - Steve Jobs",
+            "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+            "Success is not final, failure is not fatal. - Winston Churchill"
+        ];
+
+        // Particles animation
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        for (let i = 0; i < 50; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                size: Math.random() * 2 + 1
+            });
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const color = getComputedStyle(document.body).getPropertyValue('--primary-color');
+            
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = color;
+            });
+            
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Notification system
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.style.animation = 'notifSlide 0.4s ease reverse';
+                setTimeout(() => notif.remove(), 400);
+            }, 2500);
+        }
+
+        // Loading overlay
+        function showLoading() {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.id = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring"></div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.remove();
+        }
+
+        // Panic button
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '`' || e.key === '~') {
+                const overlay = document.getElementById('panic-overlay');
+                document.title = 'Clever | Log in';
+                overlay.classList.add('active');
+                
+                document.addEventListener('keydown', function escHandler(e) {
+                    if (e.key === 'Escape') {
+                        overlay.classList.remove('active');
+                        document.title = 'J.A.R.V.I.S. Interface';
+                        document.removeEventListener('keydown', escHandler);
+                    }
+                });
+            }
+        });
+
+        // Login
+        function attemptLogin() {
+            const password = document.getElementById('password-input').value;
+            if (password === 'daddyjames') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-interface').classList.add('active');
+                setTimeout(() => {
+                    terminalPrint("System initialized. Welcome back, James.");
+                    speak("System initialized. Welcome back, James.");
+                }, 500);
+                startSystemMetrics();
+                startClock();
+                animateParticles();
+                loadNotes();
+                renderSandboxTabs();
+            } else {
+                document.getElementById('login-error').textContent = 'ACCESS DENIED';
+                setTimeout(() => {
+                    document.getElementById('login-error').textContent = '';
+                }, 2000);
+            }
+        }
+
+        document.getElementById('login-btn').addEventListener('click', attemptLogin);
+        document.getElementById('password-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin();
+        });
+
+        // Clock
+        function startClock() {
+            function updateClock() {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                const s = String(now.getSeconds()).padStart(2, '0');
+                document.getElementById('hud-clock').textContent = `${h}:${m}:${s}`;
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        // System metrics
+        function startSystemMetrics() {
+            function updateMetrics() {
+                const cpu = Math.floor(Math.random() * 40) + 30;
+                const ram = Math.floor(Math.random() * 30) + 50;
+                const temp = Math.floor(Math.random() * 20) + 45;
+
+                document.getElementById('cpu-bar').style.width = cpu + '%';
+                document.getElementById('cpu-value').textContent = cpu + '%';
+                
+                document.getElementById('ram-bar').style.width = ram + '%';
+                document.getElementById('ram-value').textContent = ram + '%';
+                
+                document.getElementById('temp-bar').style.width = (temp / 100 * 100) + '%';
+                document.getElementById('temp-value').textContent = temp + '°C';
+            }
+            updateMetrics();
+            setInterval(updateMetrics, 1200);
+        }
+
+        // Calculator
+        document.querySelectorAll('.calc-btn[data-val]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = btn.getAttribute('data-val');
+                
+                if (['sin', 'cos', 'tan', 'sqrt', 'log'].includes(val)) {
+                    calcDisplay += val + '(';
+                } else if (val === '²') {
+                    calcDisplay += '^2';
+                } else if (val === 'π') {
+                    calcDisplay += 'Math.PI';
+                } else {
+                    if (calcDisplay === '0' && val !== '.') {
+                        calcDisplay = val;
+                    } else {
+                        calcDisplay += val;
+                    }
+                }
+                document.getElementById('calc-display').textContent = calcDisplay;
+            });
+        });
+
+        document.getElementById('calc-equals').addEventListener('click', () => {
+            try {
+                let expr = calcDisplay
+                    .replace(/sin\(/g, 'Math.sin(')
+                    .replace(/cos\(/g, 'Math.cos(')
+                    .replace(/tan\(/g, 'Math.tan(')
+                    .replace(/sqrt\(/g, 'Math.sqrt(')
+                    .replace(/log\(/g, 'Math.log10(')
+                    .replace(/\^/g, '**')
+                    .replace(/[^0-9+\-*/.()Math.PI\s]/g, '');
+                
+                const result = Function('"use strict"; return (' + expr + ')')();
+                calcDisplay = String(result);
+                document.getElementById('calc-display').textContent = calcDisplay;
+            } catch (e) {
+                document.getElementById('calc-display').textContent = 'ERROR';
+                setTimeout(() => {
+                    calcDisplay = '0';
+                    document.getElementById('calc-display').textContent = '0';
+                }, 1000);
+            }
+        });
+
+        document.getElementById('calc-clear').addEventListener('click', () => {
+            calcDisplay = '0';
+            document.getElementById('calc-display').textContent = '0';
+        });
+
+        // Stopwatch
+        document.getElementById('stopwatch-start').addEventListener('click', () => {
+            if (!stopwatchInterval) {
+                stopwatchInterval = setInterval(() => {
+                    stopwatchSeconds++;
+                    const mins = Math.floor(stopwatchSeconds / 60);
+                    const secs = stopwatchSeconds % 60;
+                    document.getElementById('stopwatch-display').textContent = 
+                        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                }, 1000);
+            }
+        });
+
+        document.getElementById('stopwatch-stop').addEventListener('click', () => {
+            if (stopwatchInterval) {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+            }
+        });
+
+        document.getElementById('stopwatch-reset').addEventListener('click', () => {
+            if (stopwatchInterval) {
+                clearInterval(stopwatchInterval);
+                stopwatchInterval = null;
+            }
+            stopwatchSeconds = 0;
+            document.getElementById('stopwatch-display').textContent = '00:00';
+        });
+
+        // Translator
+        document.getElementById('translate-btn').addEventListener('click', () => {
+            const text = document.getElementById('translate-input').value.toLowerCase();
+            const lang = document.getElementById('translate-lang').value;
+            
+            let translated = text;
+            const dict = translations[lang];
+            for (let word in dict) {
+                translated = translated.replace(new RegExp('\\b' + word + '\\b', 'gi'), dict[word]);
+            }
+            
+            const msg = `Translation to ${lang}: ${translated}`;
+            terminalPrint(msg);
+            speak(msg);
+            showNotification('Text translated');
+        });
+
+        // Data URL Generator
+        document.getElementById('url-convert-btn').addEventListener('click', async () => {
+            const url = document.getElementById('url-input').value.trim();
+            if (!url) {
+                terminalPrint('Error: Please enter a URL');
+                return;
+            }
+            
+            try {
+                showLoading();
+                const response = await fetch(url);
+                const html = await response.text();
+                const dataUrl = 'data:text/html,' + encodeURIComponent(html);
+                
+                const tempInput = document.createElement('input');
+                tempInput.value = dataUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
+                hideLoading();
+                terminalPrint('Data URL copied to clipboard!');
+                speak('Data URL generated and copied.');
+                showNotification('Data URL copied');
+            } catch (e) {
+                hideLoading();
+                terminalPrint('Error generating data URL: ' + e.message);
+            }
+        });
+
+        // Base64 Encoder/Decoder
+        document.getElementById('base64-encode-btn').addEventListener('click', () => {
+            const text = document.getElementById('base64-input').value;
+            if (text) {
+                const encoded = btoa(text);
+                document.getElementById('base64-input').value = encoded;
+                terminalPrint('Text encoded to Base64');
+                showNotification('Encoded to Base64');
+            }
+        });
+
+        document.getElementById('base64-decode-btn').addEventListener('click', () => {
+            const text = document.getElementById('base64-input').value;
+            try {
+                const decoded = atob(text);
+                document.getElementById('base64-input').value = decoded;
+                terminalPrint('Text decoded from Base64');
+                showNotification('Decoded from Base64');
+            } catch (e) {
+                terminalPrint('Error: Invalid Base64 string');
+            }
+        });
+
+        // File Encoder
+        document.getElementById('file-encode-btn').addEventListener('click', () => {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                terminalPrint('Error: Please select a file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const dataUrl = 'data:text/html;base64,' + btoa(content);
+                
+                const tempInput = document.createElement('input');
+                tempInput.value = dataUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
+                terminalPrint('File encoded and data URL copied to clipboard!');
+                speak('File encoded successfully.');
+                showNotification('File encoded - URL copied');
+            };
+            reader.readAsText(file);
+        });
+
+        // Notes
+        function loadNotes() {
+            const notes = localStorage.getItem('jarvis-notes') || '';
+            document.getElementById('notes-area').value = notes;
+        }
+
+        document.getElementById('notes-area').addEventListener('input', (e) => {
+            localStorage.setItem('jarvis-notes', e.target.value);
+        });
+
+        // Sandbox tabs
+        function renderSandboxTabs() {
+            const tabsContainer = document.getElementById('sandbox-tabs');
+            tabsContainer.innerHTML = '';
+            
+            sandboxTabs.forEach((tab, index) => {
+                const tabEl = document.createElement('div');
+                tabEl.className = 'sandbox-tab' + (index === currentTabIndex ? ' active' : '');
+                tabEl.textContent = tab.name;
+                tabEl.addEventListener('click', () => switchTab(index));
+                tabsContainer.appendChild(tabEl);
+            });
+            
+            document.getElementById('sandbox-code').value = sandboxTabs[currentTabIndex].code;
+        }
+
+        function switchTab(index) {
+            sandboxTabs[currentTabIndex].code = document.getElementById('sandbox-code').value;
+            currentTabIndex = index;
+            renderSandboxTabs();
+            localStorage.setItem('sandboxTabs', JSON.stringify(sandboxTabs));
+        }
+
+        document.getElementById('new-tab-btn').addEventListener('click', () => {
+            const name = prompt('Enter tab name:') || `Tab ${sandboxTabs.length + 1}`;
+            sandboxTabs.push({ name, code: '' });
+            currentTabIndex = sandboxTabs.length - 1;
+            renderSandboxTabs();
+            localStorage.setItem('sandboxTabs', JSON.stringify(sandboxTabs));
+            showNotification('New tab created');
+        });
+
+        document.getElementById('sandbox-code').addEventListener('input', (e) => {
+            sandboxTabs[currentTabIndex].code = e.target.value;
+            localStorage.setItem('sandboxTabs', JSON.stringify(sandboxTabs));
+        });
+
+        // Proxy and Movie services
+        document.getElementById('proxy-btn').addEventListener('click', () => {
+            showLoading();
+            const url = 'https://cdn.jsdelivr.net/gh/jamesbrownedu/unblocked@main/index.html';
+            const win = window.open('about:blank', '_blank');
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+                    win.document.open();
+                    win.document.write(html);
+                    win.document.close();
+                    hideLoading();
+                    terminalPrint('Proxy Hub launched successfully.');
+                    speak('Proxy Hub launched.');
+                    showNotification('Proxy Hub opened');
+                })
+                .catch(err => {
+                    hideLoading();
+                    terminalPrint('Error loading Proxy Hub: ' + err.message);
+                });
+        });
+
+        document.getElementById('movie-btn').addEventListener('click', () => {
+            showLoading();
+            const url = 'https://cdn.jsdelivr.net/gh/jamesbrownedu/movie@main/movie.html';
+            const win = window.open('about:blank', '_blank');
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+                    win.document.open();
+                    win.document.write(html);
+                    win.document.close();
+                    hideLoading();
+                    terminalPrint('Movie Service launched successfully.');
+                    speak('Movie Service launched.');
+                    showNotification('Movie Service opened');
+                })
+                .catch(err => {
+                    hideLoading();
+                    terminalPrint('Error loading Movie Service: ' + err.message);
+                });
+        });
+
+        // Sandbox
+        document.getElementById('sandbox-execute').addEventListener('click', () => {
+            const code = document.getElementById('sandbox-code').value;
+            if (code.trim()) {
+                const win = window.open('about:blank', '_blank');
+                win.document.open();
+                win.document.write(code);
+                win.document.close();
+                terminalPrint('Code executed in new window.');
+                speak('Code executed.');
+                showNotification('Code executed');
+            } else {
+                terminalPrint('No code to execute.');
+            }
+        });
+
+        document.getElementById('sandbox-btn').addEventListener('click', () => {
+            const code = document.getElementById('sandbox-code').value;
+            const win = window.open('about:blank', '_blank');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            background: #02050a;
+                            color: #00f2ff;
+                            font-family: 'Courier New', monospace;
+                        }
+                        textarea {
+                            width: 100%;
+                            height: 400px;
+                            background: #000;
+                            color: #00f2ff;
+                            border: 2px solid #00f2ff;
+                            padding: 15px;
+                            font-family: 'Courier New', monospace;
+                            font-size: 14px;
+                            resize: vertical;
+                        }
+                        button {
+                            background: transparent;
+                            border: 2px solid #00f2ff;
+                            color: #00f2ff;
+                            padding: 12px 30px;
+                            font-family: 'Courier New', monospace;
+                            font-size: 1rem;
+                            cursor: pointer;
+                            margin-top: 15px;
+                            letter-spacing: 3px;
+                        }
+                        button:hover {
+                            background: rgba(0, 242, 255, 0.2);
+                            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>J.A.R.V.I.S. HTML SANDBOX</h1>
+                    <textarea id="code">${code}</textarea>
+                    <button onclick="executeCode()">EXECUTE CODE</button>
+                    <script>
+                        function executeCode() {
+                            const code = document.getElementById('code').value;
+                            const newDoc = document.open();
+                            newDoc.write(code);
+                            newDoc.close();
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            terminalPrint('HTML Sandbox opened in new window.');
+            speak('HTML Sandbox ready.');
+            showNotification('Sandbox opened');
+        });
+
+        // Theme selector
+        document.getElementById('theme-select').addEventListener('change', (e) => {
+            const theme = e.target.value;
+            document.body.className = theme === 'cyan' ? '' : `theme-${theme}`;
+            localStorage.setItem('jarvis-theme', theme);
+            showNotification(`Theme changed to ${theme}`);
+            speak(`Theme changed to ${theme}`);
+        });
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('jarvis-theme');
+        if (savedTheme && savedTheme !== 'cyan') {
+            document.body.className = `theme-${savedTheme}`;
+            document.getElementById('theme-select').value = savedTheme;
+        }
+
+        // Scanline intensity
+        document.getElementById('scanline-slider').addEventListener('input', (e) => {
+            const opacity = e.target.value / 100;
+            document.documentElement.style.setProperty('--scanline-opacity', opacity);
+            localStorage.setItem('scanline-opacity', opacity);
+        });
+
+        const savedOpacity = localStorage.getItem('scanline-opacity');
+        if (savedOpacity) {
+            document.documentElement.style.setProperty('--scanline-opacity', savedOpacity);
+            document.getElementById('scanline-slider').value = savedOpacity * 100;
+        }
+
+        // Voice synthesis
+        function loadVoices() {
+            availableVoices = speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById('voice-select');
+            voiceSelect.innerHTML = '';
+            
+            const maleVoices = availableVoices.filter(v => 
+                v.name.toLowerCase().includes('male') || 
+                v.name.toLowerCase().includes('david') ||
+                v.name.toLowerCase().includes('alex')
+            );
+            
+            const voicesToShow = maleVoices.length > 0 ? maleVoices : availableVoices;
+            
+            voicesToShow.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = voice.name + (voice.lang ? ` (${voice.lang})` : '');
+                voiceSelect.appendChild(option);
+            });
+            
+            selectedVoice = voicesToShow[0];
+        }
+
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
+
+        document.getElementById('voice-select').addEventListener('change', (e) => {
+            const voices = speechSynthesis.getVoices();
+            selectedVoice = voices[e.target.value];
+            speak('Voice updated');
+        });
+
+        function speak(text) {
+            if (!document.getElementById('voice-enabled').checked) return;
+            
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+                utterance.pitch = 0.85;
+                utterance.rate = 1.05;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function terminalPrint(text, typing = true) {
+            const output = document.getElementById('terminal-output');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            
+            if (typing) {
+                let i = 0;
+                const prefix = '<span class="terminal-prompt">[J.A.R.V.I.S]:</span> ';
+                line.innerHTML = prefix;
+                output.appendChild(line);
+                
+                const typeInterval = setInterval(() => {
+                    if (i < text.length) {
+                        line.innerHTML = prefix + text.substring(0, i + 1);
+                        i++;
+                        output.scrollTop = output.scrollHeight;
+                    } else {
+                        clearInterval(typeInterval);
+                    }
+                }, 18);
+            } else {
+                line.innerHTML = `<span class="terminal-prompt">[J.A.R.V.I.S]:</span> ${text}`;
+                output.appendChild(line);
+            }
+            
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function calculateAge(birthDate) {
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        // Terminal commands
+        function processCommand(cmd) {
+            const lower = cmd.toLowerCase();
+            const parts = cmd.split(' ');
+            
+            if (lower.match(/hello|hi|hey|wake up/)) {
+                const response = "Hello James. Systems are at 100%.";
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/birthday|born/)) {
+                const age = calculateAge('2011-09-22');
+                const response = `Your birthday is September 22nd, 2011. You are ${age} years old.`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/status|report|system/)) {
+                const cpu = document.getElementById('cpu-value').textContent;
+                const ram = document.getElementById('ram-value').textContent;
+                const temp = document.getElementById('temp-value').textContent;
+                const response = `All systems nominal. CPU: ${cpu}, RAM: ${ram}, Core Temp: ${temp}`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/creator|made|built/)) {
+                const response = "I was developed by James Brown.";
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/joke|funny/)) {
+                const joke = jokes[Math.floor(Math.random() * jokes.length)];
+                terminalPrint(joke);
+                speak(joke);
+            }
+            else if (lower.match(/^quote/)) {
+                const quote = quotes[Math.floor(Math.random() * quotes.length)];
+                terminalPrint(quote);
+                speak(quote);
+            }
+            else if (lower.match(/time/)) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                const response = `The current time is ${timeStr}`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/weather/)) {
+                const temps = [68, 72, 75, 70, 65];
+                const conditions = ['Sunny', 'Partly Cloudy', 'Clear', 'Overcast'];
+                const temp = temps[Math.floor(Math.random() * temps.length)];
+                const condition = conditions[Math.floor(Math.random() * conditions.length)];
+                const response = `Current weather: ${temp}°F, ${condition}`;
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.startsWith('say ')) {
+                const text = cmd.substring(4);
+                terminalPrint(text);
+                speak(text);
+            }
+            else if (lower.startsWith('encode ')) {
+                const url = cmd.substring(7);
+                document.getElementById('url-input').value = url;
+                document.getElementById('url-convert-btn').click();
+            }
+            else if (lower.startsWith('search ')) {
+                const query = cmd.substring(7);
+                const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+                window.open('about:blank').location = searchUrl;
+                terminalPrint(`Searching for: ${query}`);
+                speak('Search opened');
+            }
+            else if (lower.startsWith('base64 encode ')) {
+                const text = cmd.substring(14);
+                const encoded = btoa(text);
+                terminalPrint('Encoded: ' + encoded);
+            }
+            else if (lower.startsWith('base64 decode ')) {
+                const text = cmd.substring(14);
+                try {
+                    const decoded = atob(text);
+                    terminalPrint('Decoded: ' + decoded);
+                } catch (e) {
+                    terminalPrint('Error: Invalid Base64');
+                }
+            }
+            else if (lower.match(/flip|coin/)) {
+                const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+                terminalPrint(`Coin flip: ${result}`);
+                speak(result);
+            }
+            else if (lower.startsWith('roll ')) {
+                const sides = parseInt(parts[1]) || 6;
+                const result = Math.floor(Math.random() * sides) + 1;
+                terminalPrint(`Rolling d${sides}: ${result}`);
+                speak(`Rolled ${result}`);
+            }
+            else if (lower.startsWith('math ')) {
+                const expr = cmd.substring(5);
+                try {
+                    const result = Function('"use strict"; return (' + expr + ')')();
+                    terminalPrint(`Result: ${result}`);
+                    speak(`The result is ${result}`);
+                } catch (e) {
+                    terminalPrint('Error: Invalid expression');
+                }
+            }
+            else if (lower.startsWith('reverse ')) {
+                const text = cmd.substring(8);
+                const reversed = text.split('').reverse().join('');
+                terminalPrint(`Reversed: ${reversed}`);
+            }
+            else if (lower.startsWith('upper ')) {
+                const text = cmd.substring(6);
+                terminalPrint(text.toUpperCase());
+            }
+            else if (lower.startsWith('lower ')) {
+                const text = cmd.substring(6);
+                terminalPrint(text.toLowerCase());
+            }
+            else if (lower.startsWith('theme ')) {
+                const theme = parts[1];
+                const validThemes = ['cyan', 'red', 'green', 'purple', 'gold'];
+                if (validThemes.includes(theme)) {
+                    document.getElementById('theme-select').value = theme;
+                    document.getElementById('theme-select').dispatchEvent(new Event('change'));
+                } else {
+                    terminalPrint('Valid themes: cyan, red, green, purple, gold');
+                }
+            }
+            else if (lower.startsWith('voice ')) {
+                const voiceNum = parseInt(parts[1]);
+                const voices = speechSynthesis.getVoices();
+                if (voiceNum >= 0 && voiceNum < voices.length) {
+                    selectedVoice = voices[voiceNum];
+                    document.getElementById('voice-select').value = voiceNum;
+                    speak('Voice changed');
+                } else {
+                    terminalPrint(`Invalid voice number. Available: 0-${voices.length - 1}`);
+                }
+            }
+            else if (lower.startsWith('scanline ')) {
+                const intensity = parseInt(parts[1]);
+                if (intensity >= 0 && intensity <= 100) {
+                    document.getElementById('scanline-slider').value = intensity;
+                    document.getElementById('scanline-slider').dispatchEvent(new Event('input'));
+                    terminalPrint(`Scanline intensity set to ${intensity}%`);
+                } else {
+                    terminalPrint('Intensity must be between 0-100');
+                }
+            }
+            else if (lower.match(/clear|reset/)) {
+                document.getElementById('terminal-output').innerHTML = '';
+                speak('Terminal cleared.');
+            }
+            else if (lower.match(/calculator/)) {
+                terminalPrint('Calculator is in the left panel.');
+                speak('Calculator ready');
+            }
+            else if (lower.match(/notes/)) {
+                terminalPrint('Notes section is in the right panel.');
+                speak('Notes available');
+            }
+            else if (lower.match(/proxy|unblock/)) {
+                document.getElementById('proxy-btn').click();
+            }
+            else if (lower.match(/movie|cinema|watch/)) {
+                document.getElementById('movie-btn').click();
+            }
+            else if (lower.match(/hack/)) {
+                const hackWin = window.open('', '_blank', 'width=600,height=400');
+                hackWin.document.write(`
+                    <style>
+                        body { background: #000; color: #0f0; font-family: 'Courier New'; padding: 20px; }
+                        .line { margin: 5px 0; }
+                    </style>
+                    <body>
+                        <div id="output"></div>
+                        <script>
+                            const lines = [
+                                'Initializing hack sequence...',
+                                'Connecting to mainframe...',
+                                'Bypassing firewall...',
+                                'Decrypting password hash...',
+                                'Access granted.',
+                                'HACK COMPLETE'
+                            ];
+                            let i = 0;
+                            const interval = setInterval(() => {
+                                if (i < lines.length) {
+                                    document.getElementById('output').innerHTML += 
+                                        '<div class="line">> ' + lines[i] + '</div>';
+                                    i++;
+                                } else {
+                                    clearInterval(interval);
+                                }
+                            }, 800);
+                        <\/script>
+                    </body>
+                `);
+                terminalPrint('Hack sequence initiated.');
+                speak('Hack sequence initiated.');
+            }
+            else if (lower.match(/countdown/)) {
+                const seconds = parseInt(prompt('Enter countdown seconds:'));
+                if (!isNaN(seconds)) {
+                    let remaining = seconds;
+                    const countInterval = setInterval(() => {
+                        terminalPrint(`${remaining}...`, false);
+                        speak(String(remaining));
+                        remaining--;
+                        if (remaining < 0) {
+                            clearInterval(countInterval);
+                            terminalPrint('Countdown complete!', false);
+                            speak('Countdown complete!');
+                        }
+                    }, 1000);
+                }
+            }
+            else if (lower.match(/iron man|stark/)) {
+                const response = "Mr. Stark would be proud of this interface.";
+                terminalPrint(response);
+                speak(response);
+            }
+            else if (lower.match(/help/)) {
+                const help = `Available commands: hello, birthday, status, creator, joke, quote, time, weather, clear, proxy, movie, hack, countdown, flip, roll [sides], math [expr], reverse [text], upper/lower [text], say [text], theme [color], voice [number], scanline [0-100], search [query], encode [url], base64 encode/decode [text], calculator, notes, help`;
+                terminalPrint(help);
+            }
+            else {
+                const response = `Command not recognized: ${cmd}`;
+                terminalPrint(response);
+            }
+        }
+
+        document.getElementById('hud-center').addEventListener('click', () => {
+            const responses = [
+                "All systems operational, sir.",
+                "Running diagnostics... Everything looks perfect.",
+                "How may I assist you today, James?",
+                "At your service, sir.",
+                "Systems are running at optimal capacity."
+            ];
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            terminalPrint(response);
+            speak(response);
+        });
+
+        document.getElementById('terminal-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target.value.trim();
+                if (input) {
+                    terminalPrint(`> ${input}`, false);
+                    processCommand(input);
+                    e.target.value = '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
