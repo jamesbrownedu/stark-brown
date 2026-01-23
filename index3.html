@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. - Just A Rather Very Intelligent System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --bg-dark: #0a0e27;
+            --bg-panel: rgba(15, 25, 45, 0.7);
+            --text: #ffffff;
+            --text-dim: #a0b0c0;
+            --glow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+            --glow-soft: 0 0 5px var(--primary);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--primary) 1px, transparent 1px),
+                linear-gradient(90deg, var(--primary) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.05;
+            z-index: 1;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent 50%, rgba(0, 242, 255, 0.02) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 999;
+            animation: scanlineMove 8s linear infinite;
+        }
+
+        @keyframes scanlineMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+
+        #login-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .login-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4em;
+            font-weight: 900;
+            color: var(--primary);
+            text-shadow: var(--glow);
+            margin-bottom: 40px;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .login-input {
+            background: var(--bg-panel);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2em;
+            color: var(--text);
+            text-align: center;
+            box-shadow: var(--glow-soft);
+            outline: none;
+            width: 300px;
+        }
+
+        .login-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        #main-interface {
+            position: relative;
+            z-index: 2;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 1fr 250px;
+            gap: 15px;
+            padding: 15px;
+            opacity: 0;
+            transition: opacity 0.8s;
+        }
+
+        #main-interface.visible {
+            opacity: 1;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--glow-soft);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            animation: panelFadeIn 0.6s ease-out;
+        }
+
+        @keyframes panelFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel:nth-child(1) { animation-delay: 0.1s; }
+        .panel:nth-child(2) { animation-delay: 0.2s; }
+        .panel:nth-child(3) { animation-delay: 0.3s; }
+        .panel:nth-child(4) { animation-delay: 0.4s; }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .left-panel {
+            grid-column: 1;
+            grid-row: 1 / 3;
+            overflow-y: auto;
+        }
+
+        .center-panel {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .right-panel {
+            grid-column: 3;
+            grid-row: 1 / 3;
+            overflow-y: auto;
+        }
+
+        .terminal-panel {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scrollable {
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .scrollable::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollable::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .scrollable::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0, 242, 255, 0.1);
+            border-radius: 6px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: var(--glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .metric {
+            margin-bottom: 15px;
+        }
+
+        .metric-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: var(--text-dim);
+        }
+
+        .metric-bar {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), rgba(0, 242, 255, 0.5));
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .btn {
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 12px 20px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: rgba(0, 242, 255, 0.2);
+            box-shadow: var(--glow-soft);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0);
+            animation: rippleEffect 0.6s ease-out;
+        }
+
+        @keyframes rippleEffect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .hud-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+        }
+
+        .hud-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+        }
+
+        .ring-outer {
+            width: 380px;
+            height: 380px;
+            border-style: dashed;
+            animation: rotate 25s linear infinite;
+            opacity: 0.6;
+        }
+
+        .ring-middle {
+            width: 280px;
+            height: 280px;
+            animation: rotate 10s linear infinite reverse;
+            box-shadow: var(--glow-soft);
+        }
+
+        .ring-inner {
+            width: 180px;
+            height: 180px;
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .hud-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .hud-center:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .hud-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5em;
+            font-weight: 900;
+            color: var(--primary);
+            text-shadow: var(--glow);
+            margin-bottom: 10px;
+        }
+
+        .hud-clock {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .hud-subtitle {
+            font-size: 1em;
+            color: var(--text-dim);
+        }
+
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .calc-display {
+            grid-column: 1 / -1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            text-align: right;
+            color: var(--primary);
+            min-height: 50px;
+            word-wrap: break-word;
+        }
+
+        .calc-btn {
+            padding: 15px;
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calc-btn:hover {
+            background: rgba(0, 242, 255, 0.2);
+            box-shadow: var(--glow-soft);
+        }
+
+        .calc-btn.wide {
+            grid-column: span 2;
+        }
+
+        .calc-btn.full {
+            grid-column: 1 / -1;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: var(--text-dim);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.5);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: var(--glow-soft);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1em;
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            border-radius: 13px;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: var(--text-dim);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .toggle input {
+            display: none;
+        }
+
+        .toggle input:checked + .toggle-switch {
+            background: rgba(0, 242, 255, 0.3);
+        }
+
+        .toggle input:checked + .toggle-switch::after {
+            left: 26px;
+            background: var(--primary);
+            box-shadow: var(--glow-soft);
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .terminal-line {
+            margin-bottom: 5px;
+            animation: terminalType 0.3s;
+        }
+
+        @keyframes terminalType {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .terminal-prompt {
+            color: var(--primary);
+        }
+
+        .terminal-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-panel);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: var(--glow);
+            z-index: 10000;
+            animation: slideIn 0.5s ease-out;
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.hide {
+            animation: slideOut 0.5s ease-out forwards;
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            text-align: center;
+        }
+
+        .loading-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            color: var(--primary);
+            margin-top: 20px;
+            text-shadow: var(--glow-soft);
+        }
+
+        .loading-rings {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+
+        .loading-ring {
+            position: absolute;
+            border: 3px solid transparent;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-ring:nth-child(1) {
+            width: 100px;
+            height: 100px;
+            animation-duration: 1.5s;
+        }
+
+        .loading-ring:nth-child(2) {
+            width: 70px;
+            height: 70px;
+            top: 15px;
+            left: 15px;
+            animation-duration: 1s;
+        }
+
+        .loading-ring:nth-child(3) {
+            width: 40px;
+            height: 40px;
+            top: 30px;
+            left: 30px;
+            animation-duration: 0.7s;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .voice-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background: var(--bg-panel);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--glow);
+        }
+
+        .voice-indicator.active {
+            display: flex;
+        }
+
+        .voice-bars {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            height: 20px;
+        }
+
+        .voice-bar {
+            width: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+            animation: voiceAnim 0.6s ease-in-out infinite;
+        }
+
+        .voice-bar:nth-child(1) { animation-delay: 0s; }
+        .voice-bar:nth-child(2) { animation-delay: 0.1s; }
+        .voice-bar:nth-child(3) { animation-delay: 0.2s; }
+        .voice-bar:nth-child(4) { animation-delay: 0.3s; }
+        .voice-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes voiceAnim {
+            0%, 100% { height: 5px; }
+            50% { height: 20px; }
+        }
+
+        .sandbox-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sandbox-tab {
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .sandbox-tab.active {
+            background: rgba(0, 242, 255, 0.2);
+            box-shadow: var(--glow-soft);
+        }
+
+        .sandbox-tab:hover {
+            background: rgba(0, 242, 255, 0.15);
+        }
+
+        .timer-display {
+            font-family: 'Courier New', monospace;
+            font-size: 2em;
+            color: var(--primary);
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: var(--glow-soft);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        @media (max-width: 1200px) {
+            #main-interface {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                overflow-y: auto;
+            }
+
+            .left-panel,
+            .right-panel,
+            .center-panel,
+            .terminal-panel {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            .hud-container {
+                width: 300px;
+                height: 300px;
+            }
+
+            .ring-outer { width: 280px; height: 280px; }
+            .ring-middle { width: 200px; height: 200px; }
+            .ring-inner { width: 120px; height: 120px; }
+        }
+
+        .error-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.2);
+            pointer-events: none;
+            z-index: 10001;
+            animation: flashError 0.5s;
+        }
+
+        @keyframes flashError {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .explanation {
+            font-size: 0.85em;
+            color: var(--text-dim);
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    <div class="grid-bg"></div>
+    <div class="scanlines" id="scanlines"></div>
+
+    <div id="login-screen">
+        <div class="login-title">J.A.R.V.I.S.</div>
+        <input type="password" class="login-input" id="password-input" placeholder="Enter Access Code" autofocus>
+    </div>
+
+    <div id="main-interface">
+        <div class="panel left-panel">
+            <div class="status-header">
+                <div class="status-indicator"></div>
+                <span style="font-family: 'Orbitron', sans-serif;">SYSTEM ONLINE</span>
+            </div>
+
+            <div class="panel-title">System Metrics</div>
+            <div class="scrollable">
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>CPU Usage</span>
+                        <span id="cpu-value">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="cpu-bar"></div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>RAM Usage</span>
+                        <span id="ram-value">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="ram-bar"></div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>Core Temp</span>
+                        <span id="temp-value">0°C</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="temp-bar"></div>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <div class="metric-label">
+                        <span>Network</span>
+                        <span id="network-value">0 Mbps</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="network-bar"></div>
+                    </div>
+                </div>
+
+                <div class="panel-title" style="margin-top: 30px;">Services</div>
+                <button class="btn" onclick="openProxy()">Proxy Hub</button>
+                <button class="btn" onclick="openMovie()">Movie Service</button>
+                <button class="btn" onclick="openAI()">AI Assistant</button>
+
+                <div class="panel-title" style="margin-top: 30px;">Calculator</div>
+                <div class="calculator">
+                    <div class="calc-display" id="calc-display">0</div>
+                    <button class="calc-btn" onclick="calcInput('sin(')">sin</button>
+                    <button class="calc-btn" onclick="calcInput('cos(')">cos</button>
+                    <button class="calc-btn" onclick="calcInput('tan(')">tan</button>
+                    <button class="calc-btn" onclick="calcInput('sqrt(')">√</button>
+                    <button class="calc-btn" onclick="calcInput('log(')">log</button>
+                    <button class="calc-btn" onclick="calcInput('^2')">x²</button>
+                    <button class="calc-btn" onclick="calcInput('pi')">π</button>
+                    <button class="calc-btn" onclick="calcInput('(')">(</button>
+                    <button class="calc-btn" onclick="calcInput('7')">7</button>
+                    <button class="calc-btn" onclick="calcInput('8')">8</button>
+                    <button class="calc-btn" onclick="calcInput('9')">9</button>
+                    <button class="calc-btn" onclick="calcInput('/')">÷</button>
+                    <button class="calc-btn" onclick="calcInput('4')">4</button>
+                    <button class="calc-btn" onclick="calcInput('5')">5</button>
+                    <button class="calc-btn" onclick="calcInput('6')">6</button>
+                    <button class="calc-btn" onclick="calcInput('*')">×</button>
+                    <button class="calc-btn" onclick="calcInput('1')">1</button>
+                    <button class="calc-btn" onclick="calcInput('2')">2</button>
+                    <button class="calc-btn" onclick="calcInput('3')">3</button>
+                    <button class="calc-btn" onclick="calcInput('-')">-</button>
+                    <button class="calc-btn" onclick="calcInput('0')">0</button>
+                    <button class="calc-btn" onclick="calcInput('.')">.</button>
+                    <button class="calc-btn" onclick="calcEqual()">=</button>
+                    <button class="calc-btn" onclick="calcInput('+')">+</button>
+                    <button class="calc-btn full" onclick="calcClear()">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel center-panel">
+            <div class="hud-container">
+                <div class="hud-ring ring-outer"></div>
+                <div class="hud-ring ring-middle"></div>
+                <div class="hud-ring ring-inner"></div>
+                <div class="hud-center" onclick="speak('J.A.R.V.I.S. systems operational, sir.')">
+                    <div class="hud-title">J.A.R.V.I.S.</div>
+                    <div class="hud-clock" id="hud-clock">00:00:00</div>
+                    <div class="hud-subtitle">Welcome back, James</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel right-panel">
+            <div class="panel-title">Utilities</div>
+            <div class="scrollable">
+                <div class="control-group">
+                    <label class="toggle">
+                        <input type="checkbox" id="voice-toggle" onchange="toggleVoice()">
+                        <div class="toggle-switch"></div>
+                        <span>Voice Activation</span>
+                    </label>
+                    <div class="explanation">Say "Jarvis" followed by your command</div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Theme</label>
+                    <select id="theme-select" onchange="changeTheme()">
+                        <option value="#00f2ff">Cyan</option>
+                        <option value="#ff0055">Red</option>
+                        <option value="#00ff88">Green</option>
+                        <option value="#b833ff">Purple</option>
+                        <option value="#ffd700">Gold</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Scanline Intensity: <span id="scanline-value">50</span>%</label>
+                    <input type="range" id="scanline-slider" min="0" max="100" value="50" oninput="changeScanline()">
+                </div>
+
+                <div class="panel-title" style="margin-top: 30px;">Stopwatch</div>
+                <div class="timer-display" id="stopwatch-display">00:00:00</div>
+                <div class="btn-group">
+                    <button class="btn" onclick="stopwatchToggle()">Start/Stop</button>
+                    <button class="btn" onclick="stopwatchReset()">Reset</button>
+                </div>
+
+                <div class="panel-title" style="margin-top: 30px;">Timer</div>
+                <input type="number" id="timer-input" placeholder="Minutes" min="1">
+                <button class="btn" onclick="timerStart()">Start Timer</button>
+                <div class="timer-display" id="timer-display">00:00</div>
+
+                <div class="panel-title" style="margin-top: 30px;">Translator</div>
+                <textarea id="translate-input" placeholder="Enter text to translate"></textarea>
+                <select id="translate-lang">
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="ja">Japanese</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                </select>
+                <button class="btn" onclick="translateText()">Translate</button>
+                <div id="translate-output" style="margin-top:10px;color:var(--primary);"></div>
+
+                <div class="panel-title" style="margin-top: 30px;">Notes</div>
+                <textarea id="notes-area" placeholder="Your notes auto-save..." oninput="saveNotes()"></textarea>
+
+                <div class="panel-title" style="margin-top: 30px;">HTML Sandbox</div>
+                <div class="sandbox-tabs" id="sandbox-tabs"></div>
+                <button class="btn" onclick="addSandboxTab()">+ New Tab</button>
+                <textarea id="sandbox-editor" placeholder="Write HTML here..." oninput="saveSandbox()"></textarea>
+                <div class="btn-group">
+                    <button class="btn" onclick="executeSandbox()">Execute</button>
+                    <button class="btn" onclick="openSandbox()">Open in Window</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel terminal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span class="panel-title" style="margin:0;">Terminal</span>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <label class="toggle">
+                        <input type="checkbox" id="voice-synth-toggle">
+                        <div class="toggle-switch"></div>
+                        <span style="font-size:0.9em;">Voice</span>
+                    </label>
+                    <select id="voice-select" style="width:auto;padding:5px;font-size:0.85em;"></select>
+                </div>
+            </div>
+            <div class="terminal-output scrollable" id="terminal-output"></div>
+            <div class="terminal-input-container">
+                <span class="terminal-prompt">J.A.R.V.I.S:~$</span>
+                <input type="text" class="terminal-input" id="terminal-input" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <div class="voice-indicator" id="voice-indicator">
+        <div class="voice-bars">
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+        </div>
+        <span id="voice-text">Listening...</span>
+    </div>
+
+    <script>
+const PASSWORD = 'daddyjames';
+let calcExpression = '';
+let stopwatchRunning = false;
+let stopwatchTime = 0;
+let stopwatchInterval;
+let timerInterval;
+let commandHistory = [];
+let historyIndex = -1;
+let recognition;
+let voiceQueue = [];
+let isSpeaking = false;
+let sandboxTabs = [];
+let currentTabIndex = 0;
+
+const translations = {
+    es: {hello:'hola',world:'mundo',good:'bueno',morning:'mañana',night:'noche',thank:'gracias',you:'tú',welcome:'bienvenido',yes:'sí',no:'no'},
+    fr: {hello:'bonjour',world:'monde',good:'bon',morning:'matin',night:'nuit',thank:'merci',you:'vous',welcome:'bienvenue',yes:'oui',no:'non'},
+    ja: {hello:'こんにちは',world:'世界',good:'良い',morning:'朝',night:'夜',thank:'ありがとう',you:'あなた',welcome:'ようこそ',yes:'はい',no:'いいえ'},
+    de: {hello:'hallo',world:'welt',good:'gut',morning:'morgen',night:'nacht',thank:'danke',you:'du',welcome:'willkommen',yes:'ja',no:'nein'},
+    it: {hello:'ciao',world:'mondo',good:'buono',morning:'mattina',night:'notte',thank:'grazie',you:'tu',welcome:'benvenuto',yes:'sì',no:'no'},
+    pt: {hello:'olá',world:'mundo',good:'bom',morning:'manhã',night:'noite',thank:'obrigado',you:'você',welcome:'bem-vindo',yes:'sim',no:'não'}
+};
+
+document.getElementById('password-input').addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+        if (e.target.value === PASSWORD) {
+            document.getElementById('login-screen').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('main-interface').classList.add('visible');
+                initSystem();
+            }, 500);
+        } else {
+            e.target.value = '';
+            e.target.style.borderColor = '#ff0055';
+            setTimeout(() => e.target.style.borderColor = 'var(--primary)', 500);
+        }
+    }
+});
+
+function initSystem() {
+    updateClock();
+    setInterval(updateClock, 1000);
+    updateMetrics();
+    setInterval(updateMetrics, 2000);
+    initParticles();
+    loadSettings();
+    initVoiceRecognition();
+    loadVoices();
+    initSandbox();
+    terminalLog('System initialized. Type "help" for commands.');
+}
+
+function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('hud-clock').textContent = `${h}:${m}:${s}`;
+}
+
+function updateMetrics() {
+    const cpu = Math.random() * 100;
+    const ram = Math.random() * 100;
+    const temp = 30 + Math.random() * 40;
+    const network = Math.random() * 100;
+
+    animateMetric('cpu', cpu);
+    animateMetric('ram', ram);
+    animateMetric('temp', temp, '°C');
+    animateMetric('network', network, ' Mbps');
+}
+
+function animateMetric(id, value, suffix = '%') {
+    const bar = document.getElementById(`${id}-bar`);
+    const val = document.getElementById(`${id}-value`);
+    bar.style.width = value + '%';
+    val.textContent = Math.round(value) + suffix;
+}
+
+function initParticles() {
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    for (let i = 0; i < 80; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            size: Math.random() * 2 + 1
+        });
+    }
+
+    function animate() {
+        if (!document.hidden) {
+            ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+            ctx.fillStyle = primary;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = primary;
+
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+            });
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+}
+
+function changeTheme() {
+    const color = document.getElementById('theme-select').value;
+    document.documentElement.style.setProperty('--primary', color);
+    localStorage.setItem('theme', color);
+}
+
+function changeScanline() {
+    const value = document.getElementById('scanline-slider').value;
+    document.getElementById('scanline-value').textContent = value;
+    document.getElementById('scanlines').style.opacity = value / 100;
+    localStorage.setItem('scanline', value);
+}
+
+function calcInput(val) {
+    if (calcExpression === '0' || calcExpression === 'ERROR') calcExpression = '';
+    calcExpression += val;
+    document.getElementById('calc-display').textContent = calcExpression;
+}
+
+function calcEqual() {
+    try {
+        let expr = calcExpression.replace(/\^2/g, '^2').replace(/pi/g, 'pi');
+        const result = math.evaluate(expr);
+        calcExpression = String(result);
+        document.getElementById('calc-display').textContent = calcExpression;
+    } catch {
+        document.getElementById('calc-display').textContent = 'ERROR';
+        document.getElementById('calc-display').style.color = '#ff0055';
+        setTimeout(() => document.getElementById('calc-display').style.color = 'var(--primary)', 1000);
+        calcExpression = 'ERROR';
+    }
+}
+
+function calcClear() {
+    calcExpression = '0';
+    document.getElementById('calc-display').textContent = calcExpression;
+}
+
+function stopwatchToggle() {
+    if (stopwatchRunning) {
+        clearInterval(stopwatchInterval);
+        stopwatchRunning = false;
+    } else {
+        stopwatchRunning = true;
+        const startTime = Date.now() - stopwatchTime;
+        stopwatchInterval = setInterval(() => {
+            stopwatchTime = Date.now() - startTime;
+            const ms = stopwatchTime;
+            const s = Math.floor(ms / 1000) % 60;
+            const m = Math.floor(ms / 60000) % 60;
+            const h = Math.floor(ms / 3600000);
+            document.getElementById('stopwatch-display').textContent = 
+                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }, 100);
+    }
+}
+
+function stopwatchReset() {
+    clearInterval(stopwatchInterval);
+    stopwatchRunning = false;
+    stopwatchTime = 0;
+    document.getElementById('stopwatch-display').textContent = '00:00:00';
+}
+
+function timerStart() {
+    const minutes = parseInt(document.getElementById('timer-input').value);
+    if (!minutes || minutes < 1) return notify('Please enter valid minutes');
+    
+    clearInterval(timerInterval);
+    let remaining = minutes * 60;
+    
+    timerInterval = setInterval(() => {
+        remaining--;
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        document.getElementById('timer-display').textContent = 
+            `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            playBeep();
+            notify('Timer Complete!');
+            speak('Timer complete, sir.');
+        }
+    }, 1000);
+}
+
+function playBeep() {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 800;
+    gain.gain.value = 0.3;
+    osc.start();
+    setTimeout(() => osc.stop(), 300);
+}
+
+function translateText() {
+    const text = document.getElementById('translate-input').value.toLowerCase();
+    const lang = document.getElementById('translate-lang').value;
+    const dict = translations[lang];
+    
+    const words = text.split(/\s+/);
+    const translated = words.map(w => dict[w] || w).join(' ');
+    document.getElementById('translate-output').textContent = translated;
+}
+
+let saveNotesTimeout;
+function saveNotes() {
+    clearTimeout(saveNotesTimeout);
+    saveNotesTimeout = setTimeout(() => {
+        localStorage.setItem('notes', document.getElementById('notes-area').value);
+    }, 500);
+}
+
+function initSandbox() {
+    const saved = localStorage.getItem('sandboxTabs');
+    if (saved) {
+        sandboxTabs = JSON.parse(saved);
+    } else {
+        sandboxTabs = [{name: 'Tab 1', content: ''}];
+    }
+    renderSandboxTabs();
+    loadSandboxTab(0);
+}
+
+function renderSandboxTabs() {
+    const container = document.getElementById('sandbox-tabs');
+    container.innerHTML = '';
+    sandboxTabs.forEach((tab, i) => {
+        const btn = document.createElement('div');
+        btn.className = 'sandbox-tab' + (i === currentTabIndex ? ' active' : '');
+        btn.textContent = tab.name;
+        btn.onclick = () => loadSandboxTab(i);
+        container.appendChild(btn);
+    });
+}
+
+function loadSandboxTab(index) {
+    currentTabIndex = index;
+    document.getElementById('sandbox-editor').value = sandboxTabs[index].content;
+    renderSandboxTabs();
+}
+
+function addSandboxTab() {
+    const name = prompt('Tab name:', `Tab ${sandboxTabs.length + 1}`);
+    if (name) {
+        sandboxTabs.push({name, content: ''});
+        localStorage.setItem('sandboxTabs', JSON.stringify(sandboxTabs));
+        loadSandboxTab(sandboxTabs.length - 1);
+    }
+}
+
+let saveSandboxTimeout;
+function saveSandbox() {
+    clearTimeout(saveSandboxTimeout);
+    saveSandboxTimeout = setTimeout(() => {
+        sandboxTabs[currentTabIndex].content = document.getElementById('sandbox-editor').value;
+        localStorage.setItem('sandboxTabs', JSON.stringify(sandboxTabs));
+    }, 500);
+}
+
+function executeSandbox() {
+    const code = document.getElementById('sandbox-editor').value;
+    const win = window.open('', '_blank');
+    win.document.write(code);
+    win.document.close();
+}
+
+function openSandbox() {
+    executeSandbox();
+}
+
+function terminalLog(text, isCommand = false) {
+    const output = document.getElementById('terminal-output');
+    const line = document.createElement('div');
+    line.className = 'terminal-line';
+    if (isCommand) {
+        line.innerHTML = `<span class="terminal-prompt">J.A.R.V.I.S:~$</span> ${text}`;
+    } else {
+        line.textContent = text;
+    }
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+}
+
+document.getElementById('terminal-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const input = e.target.value.trim();
+        if (input) {
+            commandHistory.unshift(input);
+            if (commandHistory.length > 50) commandHistory.pop();
+            historyIndex = -1;
+            localStorage.setItem('cmdHistory', JSON.stringify(commandHistory));
+            
+            terminalLog(input, true);
+            processCommand(input);
+            e.target.value = '';
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            e.target.value = commandHistory[historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+            historyIndex--;
+            e.target.value = commandHistory[historyIndex];
+        } else {
+            historyIndex = -1;
+            e.target.value = '';
+        }
+    }
+});
+
+function processCommand(cmd) {
+    const lower = cmd.toLowerCase();
+    const args = cmd.split(' ').slice(1).join(' ');
+    
+    const aliases = {p:'proxy',m:'movie',s:'status',h:'help',c:'clear',w:'weather',t:'time',j:'joke',q:'quote'};
+    const command = aliases[lower] || lower;
+    
+    if (command === 'help') {
+        terminalLog('Commands: hello, status, time, date, weather, joke, quote, fact, motivate, compliment, say [text], search [query], flip, roll [n], calculate [expr], reverse [text], upper [text], lower [text], clear, theme [color], scanline [0-100], reload, shutdown, proxy, movie, ai, timer [min], stopwatch, calculator, notes, password, open youtube/reddit/github, iron man, birthday, creator');
+        speak('Command list displayed, sir.');
+    } else if (['hello','hi','hey','wake'].some(w => command.includes(w))) {
+        const responses = ['Hello, sir.','Good to see you, James.','At your service.','Systems ready.'];
+        respond(responses);
+    } else if (['status','report','diagnostics'].some(w => command.includes(w))) {
+        respond(['All systems operational.','Systems functioning normally.','No issues detected, sir.']);
+    } else if (command === 'time') {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        terminalLog(`Current time: ${timeStr}`);
+        speak(`The time is ${timeStr}`);
+    } else if (['date','today'].some(w => command.includes(w))) {
+        const dateStr = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+        terminalLog(dateStr);
+        speak(`Today is ${dateStr}`);
+    } else if (command === 'weather') {
+        respond(['Weather simulation: 72°F, partly cloudy.','Simulated weather: Clear skies, 68°F.']);
+    } else if (command === 'birthday') {
+        const birthDate = new Date(2011, 8, 22);
+        const age = new Date().getFullYear() - birthDate.getFullYear();
+        terminalLog(`Your birthday is September 22, 2011. You are ${age} years old.`);
+        speak(`You are ${age} years old, James.`);
+    } else if (['creator','made','built'].some(w => command.includes(w))) {
+        respond(['You are my creator, James.','You built me, sir.']);
+    } else if (command === 'joke') {
+        const jokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs!",
+            "Why do Java developers wear glasses? Because they don't C#!",
+            "How many programmers does it take to change a light bulb? None, that's a hardware problem!",
+            "What's a programmer's favorite hangout? The Foo Bar!",
+            "Why did the programmer quit? Because they didn't get arrays!",
+            "What do you call 8 hobbits? A hobbyte!",
+            "Why do programmers always mix up Halloween and Christmas? Because Oct 31 equals Dec 25!",
+            "What's the object-oriented way to become wealthy? Inheritance!",
+            "Why was the JavaScript developer sad? Because they didn't Node how to Express themselves!",
+            "How do you comfort a JavaScript bug? You console it!"
+        ];
+        respond(jokes);
+    } else if (command === 'quote') {
+        const quotes = [
+            "The only way to do great work is to love what you do. - Steve Jobs",
+            "Innovation distinguishes between a leader and a follower. - Steve Jobs",
+            "Stay hungry, stay foolish. - Steve Jobs",
+            "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
+            "It always seems impossible until it's done. - Nelson Mandela",
+            "Believe you can and you're halfway there. - Theodore Roosevelt",
+            "Success is not final, failure is not fatal. - Winston Churchill",
+            "The best time to plant a tree was 20 years ago. The second best time is now. - Chinese Proverb"
+        ];
+        respond(quotes);
+    } else if (command === 'fact') {
+        const facts = [
+            "The first computer bug was an actual bug - a moth found in a computer in 1947.",
+            "The first 1GB hard drive weighed over 500 pounds and cost $40,000.",
+            "The first computer mouse was made of wood.",
+            "The QWERTY keyboard was designed to slow down typing to prevent typewriter jams.",
+            "The first electronic computer, ENIAC, weighed 27 tons.",
+            "Email existed before the World Wide Web.",
+            "The first domain ever registered was Symbolics.com on March 15, 1985."
+        ];
+        respond(facts);
+    } else if (command === 'motivate') {
+        respond(['You can do this, James.','Every expert was once a beginner.','Great things take time.','Believe in yourself.']);
+    } else if (command === 'compliment') {
+        respond(['You are brilliant, sir.','Your intelligence is remarkable.','I am honored to serve you.']);
+    } else if (command.startsWith('say ')) {
+        const text = args;
+        terminalLog(text);
+        speak(text);
+    } else if (['search','google'].some(w => command.startsWith(w))) {
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(args)}`);
+        respond(['Opening search results.']);
+    } else if (['flip','coin'].some(w => command.includes(w))) {
+        const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+        terminalLog(result);
+        speak(result);
+    } else if (command.startsWith('roll')) {
+        const max = parseInt(args) || 6;
+        const result = Math.floor(Math.random() * max) + 1;
+        terminalLog(`Rolled: ${result}`);
+        speak(`You rolled ${result}`);
+    } else if (['calculate','math'].some(w => command.startsWith(w))) {
+        try {
+            const result = math.evaluate(args);
+            terminalLog(`Result: ${result}`);
+            speak(`The answer is ${result}`);
+        } catch {
+            terminalLog('ERROR: Invalid expression');
+        }
+    } else if (command.startsWith('reverse ')) {
+        const reversed = args.split('').reverse().join('');
+        terminalLog(reversed);
+        speak(reversed);
+    } else if (command.startsWith('upper ')) {
+        terminalLog(args.toUpperCase());
+    } else if (command.startsWith('lower ')) {
+        terminalLog(args.toLowerCase());
+    } else if (['clear','reset'].some(w => command === w)) {
+        document.getElementById('terminal-output').innerHTML = '';
+        speak('Terminal cleared.');
+    } else if (command.startsWith('theme ')) {
+        const colors = {cyan:'#00f2ff',red:'#ff0055',green:'#00ff88',purple:'#b833ff',gold:'#ffd700'};
+        if (colors[args]) {
+            document.documentElement.style.setProperty('--primary', colors[args]);
+            respond(['Theme changed.']);
+        }
+    } else if (command.startsWith('scanline ')) {
+        const val = parseInt(args);
+        if (val >= 0 && val <= 100) {
+            document.getElementById('scanline-slider').value = val;
+            changeScanline();
+            respond(['Scanline intensity adjusted.']);
+        }
+    } else if (['reload','refresh'].some(w => command === w)) {
+        location.reload();
+    } else if (command === 'shutdown') {
+        respond(['Shutting down systems...']);
+        setTimeout(() => window.close(), 2000);
+    } else if (['export','save'].some(w => command.startsWith(w))) {
+        const log = document.getElementById('terminal-output').innerText;
+        const blob = new Blob([log], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jarvis_log.txt';
+        a.click();
+        respond(['Log exported.']);
+    } else if (['proxy','unblock'].some(w => command.includes(w))) {
+        openProxy();
+    } else if (['movie','cinema'].some(w => command.includes(w))) {
+        openMovie();
+    } else if (['ai','chat','gpt'].some(w => command.includes(w))) {
+        openAI();
+    } else if (command.startsWith('timer ')) {
+        const min = parseInt(args);
+        if (min) {
+            document.getElementById('timer-input').value = min;
+            timerStart();
+        }
+    } else if (command.includes('stopwatch')) {
+        if (command.includes('start')) stopwatchToggle();
+        else if (command.includes('stop')) stopwatchToggle();
+        else if (command.includes('reset')) stopwatchReset();
+    } else if (command === 'calculator') {
+        respond(['Calculator ready in left panel.']);
+    } else if (command === 'notes') {
+        respond(['Notes available in right panel.']);
+    } else if (command === 'password') {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let pwd = '';
+        for (let i = 0; i < 16; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+        terminalLog(`Generated: ${pwd}`);
+        speak('Password generated.');
+    } else if (command.includes('youtube')) {
+        window.open('https://youtube.com');
+        respond(['Opening YouTube.']);
+    } else if (command.includes('reddit')) {
+        window.open('https://reddit.com');
+        respond(['Opening Reddit.']);
+    } else if (command.includes('github')) {
+        window.open('https://github.com');
+        respond(['Opening GitHub.']);
+    } else if (['iron man','stark','tony'].some(w => command.includes(w))) {
+        respond(['I was made for you, not Tony Stark, sir.','You are my creator, James.']);
+    } else if (command.includes('thank')) {
+        respond(['You are welcome, sir.','My pleasure, James.']);
+    } else if (command.includes('morning')) {
+        respond(['Good morning, sir.']);
+    } else if (command.includes('afternoon')) {
+        respond(['Good afternoon, James.']);
+    } else if (command.includes('evening')) {
+        respond(['Good evening, sir.']);
+    } else if (['who are you','what are you'].some(w => command.includes(w))) {
+        respond(['I am J.A.R.V.I.S., your personal AI assistant.']);
+    } else if (command === 'random') {
+        terminalLog(Math.floor(Math.random() * 100));
+    } else if (command === 'countdown') {
+        for (let i = 5; i >= 0; i--) {
+            setTimeout(() => terminalLog(i || 'GO!'), (5-i) * 1000);
+        }
+    } else {
+        terminalLog(`Command not recognized: ${cmd}`);
+        speak('I apologize, sir. I did not understand that command.');
+    }
+}
+
+function respond(messages) {
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    terminalLog(msg);
+    speak(msg);
+}
+
+function speak(text) {
+    if (!document.getElementById('voice-synth-toggle').checked) return;
+    
+    voiceQueue.push(text);
+    if (!isSpeaking) processVoiceQueue();
+}
+
+function processVoiceQueue() {
+    if (voiceQueue.length === 0) {
+        isSpeaking = false;
+        return;
+    }
+    
+    isSpeaking = true;
+    const text = voiceQueue.shift();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    const voices = speechSynthesis.getVoices();
+    const maleVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.name.includes('James'));
+    if (maleVoice) utterance.voice = maleVoice;
+    
+    utterance.pitch = 0.85;
+    utterance.rate = 1.05;
+    
+    utterance.onend = () => processVoiceQueue();
+    speechSynthesis.speak(utterance);
+}
+
+function loadVoices() {
+    const select = document.getElementById('voice-select');
+    const voices = speechSynthesis.getVoices();
+    voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = voice.name;
+        select.appendChild(option);
+    });
+}
+
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function initVoiceRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        terminalLog('Voice recognition not available in this browser.');
+        return;
+    }
+    
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    
+    recognition.onresult = (event) => {
+        const last = event.results.length - 1;
+        const transcript = event.results[last][0].transcript.toLowerCase().trim();
+        
+        document.getElementById('voice-text').textContent = transcript;
+        
+        if (transcript.includes('jarvis')) {
+            const command = transcript.split('jarvis')[1].trim();
+            if (command) {
+                terminalLog(command, true);
+                processCommand(command);
+            }
+        }
+    };
+    
+    recognition.onerror = (event) => {
+        console.error('Voice recognition error:', event.error);
+    };
+}
+
+function toggleVoice() {
+    const enabled = document.getElementById('voice-toggle').checked;
+    const indicator = document.getElementById('voice-indicator');
+    
+    if (enabled) {
+        if (recognition) {
+            recognition.start();
+            indicator.classList.add('active');
+            notify('Voice recognition activated');
+            speak('Voice recognition activated, sir.');
+        }
+    } else {
+        if (recognition) {
+            recognition.stop();
+            indicator.classList.remove('active');
+            notify('Voice recognition deactivated');
+        }
+    }
+    
+    localStorage.setItem('voiceEnabled', enabled);
+}
+
+async function openProxy() {
+    showLoading();
+    try {
+        const response = await fetch('https://cdn.jsdelivr.net/gh/jamesbrownedu/unblocked@main/index2.html');
+        const html = await response.text();
+        const win = window.open('about:blank');
+        win.document.write(html);
+        win.document.close();
+        notify('Proxy Hub Loaded');
+        speak('Proxy hub opened, sir.');
+    } catch (error) {
+        notify('Error loading proxy hub');
+        showError();
+    }
+    hideLoading();
+}
+
+async function openMovie() {
+    showLoading();
+    try {
+        const response = await fetch('https://cdn.jsdelivr.net/gh/jamesbrownedu/movie@main/movie.html');
+        const html = await response.text();
+        const win = window.open('about:blank');
+        win.document.write(html);
+        win.document.close();
+        notify('Movie Service Loaded');
+        speak('Movie service opened, sir.');
+    } catch (error) {
+        notify('Error loading movie service');
+        showError();
+    }
+    hideLoading();
+}
+
+function openAI() {
+    window.open('https://chat.openai.com', '_blank');
+    notify('Opening AI Assistant');
+    speak('Opening AI assistant, sir.');
+}
+
+function notify(message) {
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.classList.add('hide');
+        setTimeout(() => notif.remove(), 500);
+    }, 3000);
+}
+
+function showLoading() {
+    const loading = document.createElement('div');
+    loading.className = 'loading';
+    loading.id = 'loading-indicator';
+    loading.innerHTML = `
+        <div class="loading-rings">
+            <div class="loading-ring"></div>
+            <div class="loading-ring"></div>
+            <div class="loading-ring"></div>
+        </div>
+        <div class="loading-text">PROCESSING...</div>
+    `;
+    document.body.appendChild(loading);
+}
+
+function hideLoading() {
+    const loading = document.getElementById('loading-indicator');
+    if (loading) loading.remove();
+}
+
+function showError() {
+    const flash = document.createElement('div');
+    flash.className = 'error-flash';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 500);
+}
+
+function loadSettings() {
+    const theme = localStorage.getItem('theme');
+    if (theme) {
+        document.documentElement.style.setProperty('--primary', theme);
+        document.getElementById('theme-select').value = theme;
+    }
+    
+    const scanline = localStorage.getItem('scanline');
+    if (scanline) {
+        document.getElementById('scanline-slider').value = scanline;
+        changeScanline();
+    }
+    
+    const notes = localStorage.getItem('notes');
+    if (notes) {
+        document.getElementById('notes-area').value = notes;
+    }
+    
+    const history = localStorage.getItem('cmdHistory');
+    if (history) {
+        commandHistory = JSON.parse(history);
+    }
+    
+    const voiceEnabled = localStorage.getItem('voiceEnabled');
+    if (voiceEnabled === 'true') {
+        document.getElementById('voice-toggle').checked = true;
+    }
+}
+
+document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = e.clientX - rect.left - size/2 + 'px';
+        ripple.style.top = e.clientY - rect.top - size/2 + 'px';
+        this.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    });
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === '`' || e.key === '~') {
+        e.preventDefault();
+        window.open('https://clever.com', '_blank');
+    } else if (e.key === 'Escape') {
+        const tabs = Array.from(window.open('', '_self').opener.window);
+        tabs.forEach(tab => {
+            if (tab.location.href.includes('clever.com')) {
+                tab.close();
+            }
+        });
+    }
+});
+
+window.addEventListener('resize', debounce(() => {
+    const canvas = document.getElementById('particles');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}, 250));
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+    </script>
+</body>
+</html>
