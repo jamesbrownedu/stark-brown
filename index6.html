@@ -1617,6 +1617,7 @@ function initVoiceRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         terminalLog('Voice recognition not available in this browser.');
+        notify('Voice recognition not supported');
         return;
     }
     
@@ -1624,6 +1625,12 @@ function initVoiceRecognition() {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
+    
+    recognition.onstart = () => {
+        terminalLog('Voice recognition started. Say "Jarvis" followed by a command.');
+        document.getElementById('voice-text').textContent = 'Listening...';
+    };
     
     recognition.onresult = (event) => {
         let interimTranscript = '';
@@ -1643,11 +1650,15 @@ function initVoiceRecognition() {
         
         if (finalTranscript) {
             const lower = finalTranscript.toLowerCase().trim();
+            terminalLog(`[HEARD] ${finalTranscript}`);
+            
             if (lower.includes('jarvis')) {
                 const command = lower.split('jarvis')[1].trim();
                 if (command) {
                     terminalLog(command, true);
                     processCommand(command);
+                } else {
+                    speak('Yes, sir?');
                 }
             }
         }
@@ -1655,18 +1666,41 @@ function initVoiceRecognition() {
     
     recognition.onerror = (event) => {
         console.error('Voice recognition error:', event.error);
-        if (event.error === 'no-speech') {
-            document.getElementById('voice-text').textContent = 'Listening...';
+        let errorMsg = 'Voice error: ';
+        
+        switch(event.error) {
+            case 'no-speech':
+                errorMsg += 'No speech detected';
+                document.getElementById('voice-text').textContent = 'Listening...';
+                break;
+            case 'audio-capture':
+                errorMsg += 'Microphone not found or not permitted';
+                terminalLog(errorMsg);
+                notify('Microphone access required');
+                document.getElementById('voice-toggle').checked = false;
+                break;
+            case 'not-allowed':
+                errorMsg += 'Microphone permission denied';
+                terminalLog(errorMsg);
+                notify('Please allow microphone access');
+                document.getElementById('voice-toggle').checked = false;
+                break;
+            case 'network':
+                errorMsg += 'Network error';
+                terminalLog(errorMsg);
+                break;
+            default:
+                errorMsg += event.error;
+                terminalLog(errorMsg);
         }
     };
     
     recognition.onend = () => {
         if (document.getElementById('voice-toggle').checked) {
-            recognition.start();
+            setTimeout(() => recognition.start(), 100);
         }
     };
 }
-
 function toggleVoice() {
     const enabled = document.getElementById('voice-toggle').checked;
     const indicator = document.getElementById('voice-indicator');
