@@ -1622,12 +1622,13 @@ function initVoiceRecognition() {
     }
     
     recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = false; // Changed to false to prevent restart issues
     recognition.interimResults = true;
     recognition.lang = 'en-US';
     recognition.maxAlternatives = 1;
     
     recognition.onstart = () => {
+        recognitionActive = true;
         terminalLog('Voice recognition started. Say "Jarvis" followed by a command.');
         document.getElementById('voice-text').textContent = 'Listening...';
     };
@@ -1669,8 +1670,10 @@ function initVoiceRecognition() {
         let errorMsg = 'Voice error: ';
         
         switch(event.error) {
+            case 'aborted':
+                // Don't log aborted errors, they're usually from restart issues
+                break;
             case 'no-speech':
-                errorMsg += 'No speech detected';
                 document.getElementById('voice-text').textContent = 'Listening...';
                 break;
             case 'audio-capture':
@@ -1678,26 +1681,42 @@ function initVoiceRecognition() {
                 terminalLog(errorMsg);
                 notify('Microphone access required');
                 document.getElementById('voice-toggle').checked = false;
+                recognitionActive = false;
                 break;
             case 'not-allowed':
                 errorMsg += 'Microphone permission denied';
                 terminalLog(errorMsg);
                 notify('Please allow microphone access');
                 document.getElementById('voice-toggle').checked = false;
+                recognitionActive = false;
                 break;
             case 'network':
                 errorMsg += 'Network error';
                 terminalLog(errorMsg);
                 break;
             default:
-                errorMsg += event.error;
-                terminalLog(errorMsg);
+                if (event.error !== 'aborted') {
+                    errorMsg += event.error;
+                    terminalLog(errorMsg);
+                }
         }
     };
     
     recognition.onend = () => {
+        recognitionActive = false;
+        clearTimeout(restartTimeout);
+        
         if (document.getElementById('voice-toggle').checked) {
-            setTimeout(() => recognition.start(), 100);
+            // Use a longer delay to prevent abort errors
+            restartTimeout = setTimeout(() => {
+                try {
+                    if (document.getElementById('voice-toggle').checked && !recognitionActive) {
+                        recognition.start();
+                    }
+                } catch (e) {
+                    console.log('Failed to restart recognition:', e);
+                }
+            }, 500);
         }
     };
 }
